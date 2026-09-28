@@ -1,5 +1,5 @@
 package efub.awa.moamoa.trade.enums;
 
-public enum Role {
+public enum TradeRole {
     BUYER, SELLER
 }

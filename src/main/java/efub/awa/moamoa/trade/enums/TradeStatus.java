@@ -1,5 +1,5 @@
 package efub.awa.moamoa.trade.enums;
 
-public enum TradeState {
+public enum TradeStatus {
     ACCEPTED, SUCCESS, FAILED, EXPIRED
 }
