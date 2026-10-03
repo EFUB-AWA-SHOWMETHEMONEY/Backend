@@ -15,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Table(name = "auction")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Auction extends BaseEntity {
 
@@ -37,7 +39,7 @@ public class Auction extends BaseEntity {
     private Inventory inventory;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "current_bidder_id")   //입찰 전에는 null
+    @JoinColumn(name = "current_bidder_id")
     private Member currentBidder;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -63,14 +65,14 @@ public class Auction extends BaseEntity {
     @Column(nullable = false)
     private Long currentPrice;
 
-    @Version   //낙관적 락
+    @Version
     private Long version;
 
-    private LocalDateTime commitDeadline;   //비공개 경매 전용
+    // 비공개 경매 전용
+    private LocalDateTime commitDeadline;
+    private LocalDateTime revealDeadline;
 
-    private LocalDateTime revealDeadline;   //비공개 경매 전용
-
-    private Long finalPrice;   //낙찰 전에는 null
+    private Long finalPrice;
 
     @Builder
     public Auction(Inventory inventory, Member auctionOwner, AuctionType type, Long startPrice,
