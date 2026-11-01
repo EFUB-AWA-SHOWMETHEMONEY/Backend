@@ -38,7 +38,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry
                 .setErrorHandler(stompErrorHandler)
                 .addEndpoint("/ws")
-                .setAllowedOriginPatterns(allowedOrigins); //CORS 허용 출처. 현재 모든 도메인 허용 (추후 좁혀야함)
+                .setAllowedOriginPatterns(allowedOrigins); // 허용 origin은 설정값(app.websocket.allowed-origins)으로 관리
     }
 
     @Override

@@ -4,3 +4,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+
+app:
+  websocket:
+    allowed-origins: http://localhost
