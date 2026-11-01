@@ -1,0 +1,343 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket 테스트</title>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; }
+        h2 { color: #9cdcfe; margin-bottom: 12px; }
+        h3 { color: #ce9178; margin-bottom: 8px; font-size: 13px; }
+
+        .container { display: flex; gap: 16px; flex-wrap: wrap; }
+        .panel {
+            background: #252526;
+            border: 1px solid #3c3c3c;
+            border-radius: 6px;
+            padding: 16px;
+            min-width: 300px;
+            flex: 1;
+        }
+
+        .row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+        input, select {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            color: #d4d4d4;
+            padding: 6px 10px;
+            border-radius: 4px;
+            flex: 1;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        button:hover { background: #1177bb; }
+        button.danger { background: #8b1a1a; }
+        button.danger:hover { background: #a52020; }
+        button.success { background: #1a6b35; }
+        button.success:hover { background: #1f8a44; }
+
+        /* 상태 뱃지 */
+        #status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #555;
+            color: #aaa;
+            margin-left: 10px;
+        }
+        #status.connected { background: #1a6b35; color: #b5e8c8; }
+        #status.disconnected { background: #8b1a1a; color: #f5a0a0; }
+
+        /* 로그 */
+        .log-box {
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            border-radius: 4px;
+            padding: 10px;
+            height: 220px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .log-box .ts { color: #6a9955; }
+        .log-box .sent { color: #9cdcfe; }
+        .log-box .recv { color: #dcdcaa; }
+        .log-box .err  { color: #f48771; }
+        .log-box .info { color: #c586c0; }
+
+        label { font-size: 12px; color: #888; white-space: nowrap; }
+        .sep { border-top: 1px solid #3c3c3c; margin: 12px 0; }
+    </style>
+</head>
+<body>
+
+<h2>🔌 WebSocket / STOMP 테스트 <span id="status">DISCONNECTED</span></h2>
+
+<div class="container">
+
+    <!-- ===== 연결 패널 ===== -->
+    <div class="panel" style="flex: 0 0 340px;">
+        <h3>1. 연결 설정</h3>
+        <div class="row">
+            <label>서버 URL</label>
+            <input id="url" value="ws://localhost:8080/ws/websocket" />
+        </div>
+        <div class="row">
+            <label>JWT 토큰</label>
+            <input id="token" placeholder="eyJhbGci..." />
+        </div>
+        <div class="row">
+            <button class="success" onclick="connect()">연결</button>
+            <button class="danger" onclick="disconnect()">연결 끊기</button>
+        </div>
+
+        <div class="sep"></div>
+        <h3>2. 구독</h3>
+        <div class="row">
+            <select id="subPreset" onchange="applySubPreset()">
+                <option value="/topic/plaza">/topic/plaza (광장)</option>
+                <option value="/topic/auctions/">/topic/auctions/{id} (경매방)</option>
+                <option value="/topic/trade/">/topic/trade/{id} (거래)</option>
+                <option value="/user/queue/errors">/user/queue/errors (에러)</option>
+                <option value="custom">직접 입력</option>
+            </select>
+        </div>
+        <div class="row">
+            <input id="subDest" value="/topic/plaza" />
+            <button onclick="subscribe()">구독</button>
+        </div>
+        <div id="subList" style="font-size:11px; color:#888; margin-top:4px;"></div>
+
+        <div class="sep"></div>
+        <h3>연결 로그</h3>
+        <div class="log-box" id="connLog"></div>
+    </div>
+
+    <!-- ===== 발행 패널 ===== -->
+    <div class="panel">
+        <h3>3. 발행 (클라 → 서버)</h3>
+        <div class="row">
+            <label>목적지</label>
+            <select id="pubPreset" onchange="applyPubPreset()">
+                <option value="/app/plaza/move">/app/plaza/move</option>
+                <option value="/app/plaza/chat">/app/plaza/chat</option>
+                <option value="/app/auctions//chat">/app/auctions/{id}/chat</option>
+                <option value="/app/trade//chat">/app/trade/{id}/chat</option>
+                <option value="custom">직접 입력</option>
+            </select>
+        </div>
+        <div class="row">
+            <input id="pubDest" value="/app/plaza/move" />
+        </div>
+        <div class="row">
+            <label>Payload</label>
+        </div>
+        <textarea id="pubBody" rows="5" style="
+            width:100%; background:#3c3c3c; border:1px solid #555;
+            color:#d4d4d4; padding:8px; border-radius:4px;
+            font-family:monospace; font-size:12px; resize:vertical;
+            margin-bottom:8px;">{ "x": 120, "y": 340 }</textarea>
+        <div class="row">
+            <button onclick="publish()">발행</button>
+            <button onclick="clearPubLog()">로그 지우기</button>
+        </div>
+
+        <div class="sep"></div>
+        <h3>발행 / 수신 로그</h3>
+        <div class="log-box" id="msgLog"></div>
+    </div>
+
+    <!-- ===== 빠른 시나리오 패널 ===== -->
+    <div class="panel" style="flex: 0 0 240px;">
+        <h3>빠른 시나리오</h3>
+        <p style="font-size:11px; color:#888; margin-bottom:10px;">버튼 하나로 자주 쓰는 메시지 발행</p>
+
+        <button style="width:100%; margin-bottom:6px;" onclick="quickMove()">📍 이동 (move)</button>
+        <button style="width:100%; margin-bottom:6px;" onclick="quickChat()">💬 채팅 (chat)</button>
+        <div class="sep"></div>
+
+        <h3>HTTP 스냅샷 API</h3>
+        <div class="row">
+            <input id="snapshotUrl" value="http://localhost:8080/plaza/participants" />
+        </div>
+        <button style="width:100%; margin-bottom:6px;" onclick="fetchSnapshot()">GET 호출</button>
+        <div class="log-box" id="snapLog" style="height:140px;"></div>
+
+        <div class="sep"></div>
+        <h3>탭 식별</h3>
+        <p style="font-size:11px; color:#888;">탭 2개로 테스트할 때 이름 구분용</p>
+        <div class="row">
+            <input id="tabName" placeholder="탭 이름 (예: 유저A)" />
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let client = null;
+    const subs = {}; // destination → subscription
+
+    /* ── 유틸 ── */
+    function ts() {
+        return new Date().toLocaleTimeString('ko-KR', { hour12: false });
+    }
+    function appendLog(boxId, cls, text) {
+        const box = document.getElementById(boxId);
+        const line = document.createElement('div');
+        line.innerHTML = `<span class="ts">[${ts()}]</span> <span class="${cls}">${text}</span>`;
+        box.appendChild(line);
+        box.scrollTop = box.scrollHeight;
+    }
+    function connLog(cls, msg)  { appendLog('connLog', cls, msg); }
+    function msgLog(cls, msg)   { appendLog('msgLog',  cls, msg); }
+    function snapLog(cls, msg)  { appendLog('snapLog', cls, msg); }
+
+    /* ── 프리셋 ── */
+    const pubPayloads = {
+        '/app/plaza/move':       '{ "x": 120, "y": 340 }',
+        '/app/plaza/chat':       '{ "text": "안녕하세요!" }',
+        '/app/auctions//chat':   '{ "text": "입찰 응원해요" }',
+        '/app/trade//chat':      '{ "text": "거래 확인해주세요" }',
+    };
+    function applyPubPreset() {
+        const v = document.getElementById('pubPreset').value;
+        if (v !== 'custom') {
+            document.getElementById('pubDest').value = v;
+            document.getElementById('pubBody').value = pubPayloads[v] ?? '{}';
+        }
+    }
+    function applySubPreset() {
+        const v = document.getElementById('subPreset').value;
+        if (v !== 'custom') document.getElementById('subDest').value = v;
+    }
+
+    /* ── 연결 ── */
+    function connect() {
+        const url   = document.getElementById('url').value.trim();
+        const token = document.getElementById('token').value.trim();
+
+        client = new StompJs.Client({
+            brokerURL: url,
+            connectHeaders: token ? { Authorization: 'Bearer ' + token } : {},
+            reconnectDelay: 0,
+            onConnect: () => {
+                setStatus('connected');
+                connLog('info', '✅ 연결 성공');
+            },
+            onDisconnect: () => {
+                setStatus('disconnected');
+                connLog('err', '🔴 연결 끊김');
+            },
+            onStompError: (frame) => {
+                connLog('err', '❌ STOMP 에러: ' + frame.headers?.message);
+            },
+            onWebSocketError: (e) => {
+                connLog('err', '❌ WebSocket 에러: ' + e.type);
+            },
+            debug: (str) => {
+                // CONNECT/CONNECTED 프레임만 연결 로그에 표시
+                if (str.includes('CONNECT') || str.includes('ERROR')) {
+                    connLog('info', str.substring(0, 120));
+                }
+            }
+        });
+        client.activate();
+        connLog('info', `🔄 연결 시도 → ${url}`);
+    }
+
+    function disconnect() {
+        if (client) {
+            client.deactivate();
+            setStatus('disconnected');
+            connLog('info', '연결 해제 요청');
+        }
+    }
+
+    function setStatus(state) {
+        const el = document.getElementById('status');
+        el.textContent = state === 'connected' ? 'CONNECTED' : 'DISCONNECTED';
+        el.className = state;
+    }
+
+    /* ── 구독 ── */
+    function subscribe() {
+        if (!client?.connected) { connLog('err', '먼저 연결하세요'); return; }
+        const dest = document.getElementById('subDest').value.trim();
+        if (subs[dest]) { connLog('info', `이미 구독 중: ${dest}`); return; }
+
+        subs[dest] = client.subscribe(dest, (msg) => {
+            const tabName = document.getElementById('tabName').value || '';
+            const prefix  = tabName ? `[${tabName}] ` : '';
+            try {
+                const parsed = JSON.stringify(JSON.parse(msg.body), null, 2);
+                msgLog('recv', `${prefix}📨 ${dest}<br><pre style="margin-left:16px;white-space:pre-wrap;">${parsed}</pre>`);
+            } catch {
+                msgLog('recv', `${prefix}📨 ${dest} → ${msg.body}`);
+            }
+        });
+
+        connLog('info', `📌 구독: ${dest}`);
+        updateSubList();
+    }
+
+    function updateSubList() {
+        const list = Object.keys(subs);
+        document.getElementById('subList').textContent =
+            list.length ? '구독 중: ' + list.join(', ') : '';
+    }
+
+    /* ── 발행 ── */
+    function publish() {
+        if (!client?.connected) { msgLog('err', '먼저 연결하세요'); return; }
+        const dest = document.getElementById('pubDest').value.trim();
+        const body = document.getElementById('pubBody').value.trim();
+        client.publish({ destination: dest, body });
+        msgLog('sent', `📤 → ${dest} : ${body}`);
+    }
+
+    function clearPubLog() { document.getElementById('msgLog').innerHTML = ''; }
+
+    /* ── 빠른 시나리오 ── */
+    function quickMove() {
+        document.getElementById('pubDest').value = '/app/plaza/move';
+        const x = Math.floor(Math.random() * 800);
+        const y = Math.floor(Math.random() * 600);
+        document.getElementById('pubBody').value = JSON.stringify({ x, y });
+        publish();
+    }
+    function quickChat() {
+        document.getElementById('pubDest').value = '/app/plaza/chat';
+        document.getElementById('pubBody').value = JSON.stringify({ text: '안녕하세요! ' + ts() });
+        publish();
+    }
+
+    /* ── 스냅샷 API ── */
+    async function fetchSnapshot() {
+        const url = document.getElementById('snapshotUrl').value.trim();
+        snapLog('info', `GET ${url}`);
+        try {
+            const res  = await fetch(url);
+            const data = await res.json();
+            snapLog('recv', JSON.stringify(data, null, 2));
+        } catch (e) {
+            snapLog('err', '실패: ' + e.message);
+        }
+    }
+</script>
+</body>
+</html>
+

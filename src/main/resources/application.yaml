@@ -3,3 +3,7 @@ spring:
     name: MoaMoa
   profiles:
     default: local
+
+app:
+  websocket:
+    allowed-origins: ${WS_ALLOWED_ORIGINS}
