@@ -1,4 +1,4 @@
-package efub.awa.moamoa.global.websocket.auth;
+package efub.awa.moamoa.websocket.auth;
 
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;

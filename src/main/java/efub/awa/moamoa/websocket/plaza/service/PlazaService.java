@@ -1,13 +1,13 @@
-package efub.awa.moamoa.global.websocket.plaza.service;
+package efub.awa.moamoa.websocket.plaza.service;
 
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
-import efub.awa.moamoa.global.websocket.plaza.dto.request.MoveRequestDto;
-import efub.awa.moamoa.global.websocket.plaza.dto.response.PlazaEvent.PositionUpdate;
-import efub.awa.moamoa.global.websocket.plaza.entity.EquippedItem;
-import efub.awa.moamoa.global.websocket.plaza.entity.ParticipantState;
-import efub.awa.moamoa.global.websocket.plaza.enums.PlazaConstants;
-import efub.awa.moamoa.global.websocket.plaza.repository.PlazaParticipantRegistry;
+import efub.awa.moamoa.websocket.plaza.dto.request.MoveRequestDto;
+import efub.awa.moamoa.websocket.plaza.dto.response.PlazaEvent.PositionUpdate;
+import efub.awa.moamoa.websocket.plaza.entity.EquippedItem;
+import efub.awa.moamoa.websocket.plaza.entity.ParticipantState;
+import efub.awa.moamoa.websocket.plaza.enums.PlazaConstants;
+import efub.awa.moamoa.websocket.plaza.repository.PlazaParticipantRegistry;
 import efub.awa.moamoa.item.repository.InventoryRepository;
 import efub.awa.moamoa.member.entity.Member;
 import efub.awa.moamoa.member.repository.MemberRepository;

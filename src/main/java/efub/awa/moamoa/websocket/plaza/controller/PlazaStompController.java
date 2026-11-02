@@ -1,9 +1,9 @@
-package efub.awa.moamoa.global.websocket.plaza.controller;
+package efub.awa.moamoa.websocket.plaza.controller;
 
-import efub.awa.moamoa.global.websocket.auth.StompPrincipal;
-import efub.awa.moamoa.global.websocket.plaza.enums.PlazaConstants;
-import efub.awa.moamoa.global.websocket.plaza.dto.request.MoveRequestDto;
-import efub.awa.moamoa.global.websocket.plaza.service.PlazaService;
+import efub.awa.moamoa.websocket.auth.StompPrincipal;
+import efub.awa.moamoa.websocket.plaza.enums.PlazaConstants;
+import efub.awa.moamoa.websocket.plaza.dto.request.MoveRequestDto;
+import efub.awa.moamoa.websocket.plaza.service.PlazaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;

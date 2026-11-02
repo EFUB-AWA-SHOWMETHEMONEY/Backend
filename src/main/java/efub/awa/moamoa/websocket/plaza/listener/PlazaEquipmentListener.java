@@ -1,9 +1,9 @@
-package efub.awa.moamoa.global.websocket.plaza.listener;
+package efub.awa.moamoa.websocket.plaza.listener;
 
-import efub.awa.moamoa.global.websocket.plaza.dto.response.PlazaEvent;
-import efub.awa.moamoa.global.websocket.plaza.entity.EquippedItem;
-import efub.awa.moamoa.global.websocket.plaza.enums.PlazaConstants;
-import efub.awa.moamoa.global.websocket.plaza.repository.PlazaParticipantRegistry;
+import efub.awa.moamoa.websocket.plaza.dto.response.PlazaEvent;
+import efub.awa.moamoa.websocket.plaza.entity.EquippedItem;
+import efub.awa.moamoa.websocket.plaza.enums.PlazaConstants;
+import efub.awa.moamoa.websocket.plaza.repository.PlazaParticipantRegistry;
 import efub.awa.moamoa.item.event.ItemEquippedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

@@ -1,4 +1,4 @@
-package efub.awa.moamoa.global.websocket.plaza.enums;
+package efub.awa.moamoa.websocket.plaza.enums;
 
 public class PlazaConstants {
 

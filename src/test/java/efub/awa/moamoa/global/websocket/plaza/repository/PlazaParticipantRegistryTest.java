@@ -1,7 +1,8 @@
 package efub.awa.moamoa.global.websocket.plaza.repository;
 
-import efub.awa.moamoa.global.websocket.plaza.entity.EquippedItem;
-import efub.awa.moamoa.global.websocket.plaza.entity.ParticipantState;
+import efub.awa.moamoa.websocket.plaza.entity.EquippedItem;
+import efub.awa.moamoa.websocket.plaza.entity.ParticipantState;
+import efub.awa.moamoa.websocket.plaza.repository.PlazaParticipantRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

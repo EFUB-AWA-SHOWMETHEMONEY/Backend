@@ -1,9 +1,9 @@
-package efub.awa.moamoa.global.websocket.plaza.controller;
+package efub.awa.moamoa.websocket.plaza.controller;
 
 import efub.awa.moamoa.global.common.response.ApiResponse;
-import efub.awa.moamoa.global.websocket.plaza.repository.PlazaParticipantRegistry;
-import efub.awa.moamoa.global.websocket.plaza.dto.response.ParticipantResponse;
-import efub.awa.moamoa.global.websocket.plaza.dto.response.PlazaSnapshotResponse;
+import efub.awa.moamoa.websocket.plaza.repository.PlazaParticipantRegistry;
+import efub.awa.moamoa.websocket.plaza.dto.response.ParticipantResponse;
+import efub.awa.moamoa.websocket.plaza.dto.response.PlazaSnapshotResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;

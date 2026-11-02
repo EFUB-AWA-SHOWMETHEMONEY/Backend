@@ -1,4 +1,4 @@
-package efub.awa.moamoa.global.websocket.plaza.dto.request;
+package efub.awa.moamoa.websocket.plaza.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 

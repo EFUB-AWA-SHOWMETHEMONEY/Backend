@@ -1,4 +1,4 @@
-package efub.awa.moamoa.global.websocket.exception;
+package efub.awa.moamoa.websocket.exception;
 
 import efub.awa.moamoa.global.common.response.ApiResponse;
 import efub.awa.moamoa.global.exception.CustomException;

@@ -1,4 +1,4 @@
-package efub.awa.moamoa.global.websocket.auth;
+package efub.awa.moamoa.websocket.auth;
 
 import java.security.Principal;
 

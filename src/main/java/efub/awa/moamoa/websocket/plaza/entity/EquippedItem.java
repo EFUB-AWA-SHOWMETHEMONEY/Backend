@@ -1,4 +1,4 @@
-package efub.awa.moamoa.global.websocket.plaza.entity;
+package efub.awa.moamoa.websocket.plaza.entity;
 
 import efub.awa.moamoa.item.entity.Item;
 

@@ -1,7 +1,7 @@
-package efub.awa.moamoa.global.websocket.plaza.repository;
+package efub.awa.moamoa.websocket.plaza.repository;
 
-import efub.awa.moamoa.global.websocket.plaza.entity.EquippedItem;
-import efub.awa.moamoa.global.websocket.plaza.entity.ParticipantState;
+import efub.awa.moamoa.websocket.plaza.entity.EquippedItem;
+import efub.awa.moamoa.websocket.plaza.entity.ParticipantState;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

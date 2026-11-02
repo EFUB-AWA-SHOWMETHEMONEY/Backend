@@ -1,6 +1,6 @@
 package efub.awa.moamoa.global.config;
 
-import efub.awa.moamoa.global.websocket.exception.StompErrorHandler;
+import efub.awa.moamoa.websocket.exception.StompErrorHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

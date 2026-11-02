@@ -2,11 +2,12 @@ package efub.awa.moamoa.global.websocket.plaza.service;
 
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
-import efub.awa.moamoa.global.websocket.plaza.dto.request.MoveRequestDto;
-import efub.awa.moamoa.global.websocket.plaza.dto.response.PlazaEvent.PositionUpdate;
-import efub.awa.moamoa.global.websocket.plaza.entity.ParticipantState;
-import efub.awa.moamoa.global.websocket.plaza.enums.PlazaConstants;
-import efub.awa.moamoa.global.websocket.plaza.repository.PlazaParticipantRegistry;
+import efub.awa.moamoa.websocket.plaza.dto.request.MoveRequestDto;
+import efub.awa.moamoa.websocket.plaza.dto.response.PlazaEvent.PositionUpdate;
+import efub.awa.moamoa.websocket.plaza.entity.ParticipantState;
+import efub.awa.moamoa.websocket.plaza.enums.PlazaConstants;
+import efub.awa.moamoa.websocket.plaza.repository.PlazaParticipantRegistry;
+import efub.awa.moamoa.websocket.plaza.service.PlazaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

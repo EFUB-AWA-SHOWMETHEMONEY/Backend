@@ -1,7 +1,7 @@
-package efub.awa.moamoa.global.websocket.plaza.dto.response;
+package efub.awa.moamoa.websocket.plaza.dto.response;
 
-import efub.awa.moamoa.global.websocket.plaza.entity.EquippedItem;
-import efub.awa.moamoa.global.websocket.plaza.entity.ParticipantState;
+import efub.awa.moamoa.websocket.plaza.entity.EquippedItem;
+import efub.awa.moamoa.websocket.plaza.entity.ParticipantState;
 
 public sealed interface PlazaEvent {
 

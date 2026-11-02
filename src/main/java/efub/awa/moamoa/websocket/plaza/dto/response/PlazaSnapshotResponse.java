@@ -1,4 +1,4 @@
-package efub.awa.moamoa.global.websocket.plaza.dto.response;
+package efub.awa.moamoa.websocket.plaza.dto.response;
 
 import java.util.List;
 
