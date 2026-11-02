@@ -120,6 +120,11 @@
             <input id="subDest" value="/topic/plaza" />
             <button onclick="subscribe()">구독</button>
         </div>
+        <div class="row">
+            <button class="success" style="width:100%;" onclick="subscribeAll()">
+                광장 + 에러 한 번에 구독 (= 입장)
+            </button>
+        </div>
         <div id="subList" style="font-size:11px; color:#888; margin-top:4px;"></div>
 
         <div class="sep"></div>
@@ -134,7 +139,7 @@
             <label>목적지</label>
             <select id="pubPreset" onchange="applyPubPreset()">
                 <option value="/app/plaza/move">/app/plaza/move</option>
-                <option value="/app/plaza/chat">/app/plaza/chat</option>
+                <option value="/app/plaza/chat">/app/plaza/chat (서버 미구현)</option>
                 <option value="/app/auctions//chat">/app/auctions/{id}/chat</option>
                 <option value="/app/trade//chat">/app/trade/{id}/chat</option>
                 <option value="custom">직접 입력</option>
@@ -150,7 +155,17 @@
             width:100%; background:#3c3c3c; border:1px solid #555;
             color:#d4d4d4; padding:8px; border-radius:4px;
             font-family:monospace; font-size:12px; resize:vertical;
-            margin-bottom:8px;">{ "x": 120, "y": 340 }</textarea>
+            margin-bottom:8px;">{ "x": 120, "y": 135, "seq": 1 }</textarea>
+        <div class="row" style="align-items:center; gap:6px;">
+            <input type="checkbox" id="autoSeq" checked style="width:auto;" />
+            <label for="autoSeq" style="font-size:11px; color:#aaa; white-space:nowrap;">
+                seq 자동 증가 (끄면 입력값 그대로 전송 &rarr; 거부 테스트용)
+            </label>
+        </div>
+        <div class="row">
+            <span style="font-size:11px; color:#888;">보낸 seq: <b id="seqView">0</b></span>
+            <button onclick="resetSeq()" style="font-size:11px;">seq 리셋</button>
+        </div>
         <div class="row">
             <button onclick="publish()">발행</button>
             <button onclick="clearPubLog()">로그 지우기</button>
@@ -166,15 +181,17 @@
         <h3>빠른 시나리오</h3>
         <p style="font-size:11px; color:#888; margin-bottom:10px;">버튼 하나로 자주 쓰는 메시지 발행</p>
 
-        <button style="width:100%; margin-bottom:6px;" onclick="quickMove()">📍 이동 (move)</button>
-        <button style="width:100%; margin-bottom:6px;" onclick="quickChat()">💬 채팅 (chat)</button>
+        <button style="width:100%; margin-bottom:6px;" onclick="quickMove()">📍 이동 (범위 내)</button>
+        <button style="width:100%; margin-bottom:6px;" onclick="quickMoveOutOfRange()">📐 범위 밖 이동 (clamp 확인)</button>
+        <button style="width:100%; margin-bottom:6px;" onclick="quickStaleSeq()">⏮ 낡은 seq (거부 확인)</button>
+        <button style="width:100%; margin-bottom:6px;" onclick="quickMoveBurst()">⚡ 연속 10회 이동</button>
         <div class="sep"></div>
 
         <h3>HTTP 스냅샷 API</h3>
         <div class="row">
             <input id="snapshotUrl" value="http://localhost:8080/plaza/participants" />
         </div>
-        <button style="width:100%; margin-bottom:6px;" onclick="fetchSnapshot()">GET 호출</button>
+        <button style="width:100%; margin-bottom:6px;" onclick="fetchSnapshot()">GET 호출 (+ 상태판 초기화)</button>
         <div class="log-box" id="snapLog" style="height:140px;"></div>
 
         <div class="sep"></div>
@@ -183,6 +200,19 @@
         <div class="row">
             <input id="tabName" placeholder="탭 이름 (예: 유저A)" />
         </div>
+    </div>
+
+    <!-- ===== 참가자 상태판 ===== -->
+    <div class="panel">
+        <h3>참가자 상태 (프론트 구현 참고)</h3>
+        <p style="font-size:11px; color:#888; margin-bottom:10px;">
+            수신 이벤트를 <b>멤버별 seq 필터링</b>으로 적용한 결과입니다.
+            프론트가 똑같이 구현해야 하는 로직입니다.
+        </p>
+        <div id="stateTable" style="font-family:monospace; font-size:12px;"></div>
+        <div class="sep"></div>
+        <h3>적용 / 폐기 로그</h3>
+        <div class="log-box" id="stateLog" style="height:160px;"></div>
     </div>
 
 </div>
@@ -208,7 +238,7 @@
 
     /* ── 프리셋 ── */
     const pubPayloads = {
-        '/app/plaza/move':       '{ "x": 120, "y": 340 }',
+        '/app/plaza/move':       '{ "x": 120, "y": 135, "seq": 1 }',
         '/app/plaza/chat':       '{ "text": "안녕하세요!" }',
         '/app/auctions//chat':   '{ "text": "입찰 응원해요" }',
         '/app/trade//chat':      '{ "text": "거래 확인해주세요" }',
@@ -283,8 +313,10 @@
             const tabName = document.getElementById('tabName').value || '';
             const prefix  = tabName ? `[${tabName}] ` : '';
             try {
-                const parsed = JSON.stringify(JSON.parse(msg.body), null, 2);
+                const obj = JSON.parse(msg.body);
+                const parsed = JSON.stringify(obj, null, 2);
                 msgLog('recv', `${prefix}📨 ${dest}<br><pre style="margin-left:16px;white-space:pre-wrap;">${parsed}</pre>`);
+                if (dest === '/topic/plaza') applyEvent(obj);
             } catch {
                 msgLog('recv', `${prefix}📨 ${dest} → ${msg.body}`);
             }
@@ -301,10 +333,33 @@
     }
 
     /* ── 발행 ── */
+    let moveSeq = 0;
+
+    function resetSeq() {
+        moveSeq = 0;
+        document.getElementById('seqView').textContent = '0';
+        msgLog('info', 'seq 카운터를 0으로 리셋했습니다 (재접속 시 서버도 0부터 시작)');
+    }
+
+    //서버는 저장된 seq보다 큰 값만 수락한다. 자동 증가가 켜져 있으면 매 발행마다 +1
     function publish() {
         if (!client?.connected) { msgLog('err', '먼저 연결하세요'); return; }
         const dest = document.getElementById('pubDest').value.trim();
-        const body = document.getElementById('pubBody').value.trim();
+        let body   = document.getElementById('pubBody').value.trim();
+
+        if (dest === '/app/plaza/move' && document.getElementById('autoSeq').checked) {
+            try {
+                const o = JSON.parse(body);
+                o.seq = ++moveSeq;
+                body = JSON.stringify(o);
+                document.getElementById('pubBody').value = body;
+                document.getElementById('seqView').textContent = String(moveSeq);
+            } catch {
+                msgLog('err', 'payload가 올바른 JSON이 아닙니다 (seq 자동 증가 실패)');
+                return;
+            }
+        }
+
         client.publish({ destination: dest, body });
         msgLog('sent', `📤 → ${dest} : ${body}`);
     }
@@ -312,17 +367,49 @@
     function clearPubLog() { document.getElementById('msgLog').innerHTML = ''; }
 
     /* ── 빠른 시나리오 ── */
-    function quickMove() {
+    const PLAZA_W = 480, PLAZA_H = 270;   //서버 PlazaConstants와 동일. 유효 좌표 0..479 / 0..269
+
+    function sendMove(x, y, seqOverride) {
         document.getElementById('pubDest').value = '/app/plaza/move';
-        const x = Math.floor(Math.random() * 800);
-        const y = Math.floor(Math.random() * 600);
-        document.getElementById('pubBody').value = JSON.stringify({ x, y });
+        const payload = { x, y, seq: seqOverride ?? (moveSeq + 1) };
+        document.getElementById('pubBody').value = JSON.stringify(payload);
         publish();
     }
-    function quickChat() {
-        document.getElementById('pubDest').value = '/app/plaza/chat';
-        document.getElementById('pubBody').value = JSON.stringify({ text: '안녕하세요! ' + ts() });
-        publish();
+
+    function quickMove() {
+        sendMove(Math.floor(Math.random() * PLAZA_W), Math.floor(Math.random() * PLAZA_H));
+    }
+
+    //서버가 0..479 / 0..269로 보정(clamp)해서 position_update를 돌려주는지 확인
+    function quickMoveOutOfRange() {
+        msgLog('info', `범위 밖 좌표 전송 → 서버가 (${PLAZA_W - 1}, ${PLAZA_H - 1})로 보정해 응답해야 정상`);
+        sendMove(9999, 9999);
+    }
+
+    //낡은 seq는 서버가 무시하므로 position_update가 오지 않아야 정상
+    function quickStaleSeq() {
+        const auto = document.getElementById('autoSeq');
+        const prev = auto.checked;
+        auto.checked = false;                       //입력값 그대로 보내야 하므로 자동 증가 해제
+        const stale = Math.max(0, moveSeq - 1);
+        msgLog('info', `낡은 seq(${stale}) 전송 → position_update가 오지 않아야 정상`);
+        sendMove(10, 10, stale);
+        auto.checked = prev;
+    }
+
+    //역전 처리를 눈으로 보기 위한 연속 발행
+    function quickMoveBurst() {
+        for (let i = 0; i < 10; i++) {
+            sendMove(Math.floor(Math.random() * PLAZA_W), Math.floor(Math.random() * PLAZA_H));
+        }
+    }
+
+    function subscribeAll() {
+        for (const d of ['/topic/plaza', '/user/queue/errors']) {
+            document.getElementById('subDest').value = d;
+            subscribe();
+        }
+        document.getElementById('subDest').value = '/topic/plaza';
     }
 
     function unsubscribe() {
@@ -338,11 +425,98 @@
         snapLog('info', `GET ${url}`);
         try {
             const res  = await fetch(url);
-            const data = await res.json();
-            snapLog('recv', JSON.stringify(data, null, 2));
+            const json = await res.json();
+            snapLog('recv', JSON.stringify(json, null, 2));
+
+            //ApiResponse 래퍼 안의 data를 꺼내 상태판 초기화
+            const data = json.data ?? json;
+            if (Array.isArray(data.participants)) {
+                for (const k of Object.keys(participants)) delete participants[k];
+                for (const p of data.participants) {
+                    participants[p.memberId] = {
+                        nickname: p.nickname, x: p.x, y: p.y,
+                        seq: 0,                       //스냅샷에 seq가 없어 0부터 시작
+                        equippedItem: p.equippedItem
+                    };
+                }
+                stateLog('info', `스냅샷 적용: ${data.participantCount}명 (snapshotAt=${data.snapshotAt})`);
+                renderParticipants();
+            }
         } catch (e) {
             snapLog('err', '실패: ' + e.message);
         }
+    }
+
+    /* ── 참가자 상태판: 프론트가 구현해야 하는 seq 필터링 ── */
+    const participants = {};   // memberId → { nickname, x, y, seq, equippedItem }
+
+    function stateLog(cls, msg) { appendLog('stateLog', cls, msg); }
+
+    function applyEvent(ev) {
+        if (!ev || !ev.type) return;
+        const id = ev.memberId;
+
+        switch (ev.type) {
+            case 'user_joined':
+                participants[id] = {
+                    nickname: ev.nickname, x: ev.x, y: ev.y,
+                    seq: 0, equippedItem: ev.equippedItem
+                };
+                stateLog('info', `입장: ${ev.nickname}(${id}) @ (${ev.x}, ${ev.y})`);
+                break;
+
+            case 'user_left':
+                stateLog('info', `퇴장: ${participants[id]?.nickname ?? '?'}(${id})`);
+                delete participants[id];
+                break;
+
+            case 'position_update': {
+                const p = participants[id];
+                if (!p) {
+                    stateLog('err', `미등록 멤버 ${id}의 position_update 무시 (user_joined 미수신)`);
+                    return;
+                }
+                //핵심 규칙: 마지막 적용 seq보다 크지 않으면 폐기 (브로드캐스트 순서는 보장되지 않음)
+                if (ev.seq <= p.seq) {
+                    stateLog('err', `역전 폐기: ${id} seq ${ev.seq} <= 적용된 ${p.seq}`);
+                    return;
+                }
+                p.x = ev.x; p.y = ev.y; p.seq = ev.seq;
+                stateLog('recv', `이동 적용: ${id} → (${ev.x}, ${ev.y}) seq=${ev.seq}`);
+                break;
+            }
+
+            case 'equipment_update': {
+                const p = participants[id];
+                if (!p) { stateLog('err', `미등록 멤버 ${id}의 equipment_update 무시`); return; }
+                p.equippedItem = ev.equippedItem;
+                stateLog('recv', `장착 변경: ${id} → itemId=${ev.equippedItem?.itemId ?? 'null'}`);
+                break;
+            }
+
+            default:
+                stateLog('err', `알 수 없는 type: ${ev.type}`);
+                return;
+        }
+        renderParticipants();
+    }
+
+    function renderParticipants() {
+        const ids = Object.keys(participants);
+        const box = document.getElementById('stateTable');
+        if (!ids.length) { box.textContent = '(참가자 없음)'; return; }
+
+        let html = '<table style="width:100%; border-collapse:collapse;">'
+                 + '<tr style="color:#888; text-align:left;">'
+                 + '<th>memberId</th><th>nickname</th><th>x</th><th>y</th><th>seq</th><th>itemId</th></tr>';
+        for (const id of ids) {
+            const p = participants[id];
+            html += `<tr style="border-top:1px solid #444;">`
+                  + `<td>${id}</td><td>${p.nickname ?? '-'}</td>`
+                  + `<td>${p.x}</td><td>${p.y}</td><td>${p.seq}</td>`
+                  + `<td>${p.equippedItem?.itemId ?? '-'}</td></tr>`;
+        }
+        box.innerHTML = html + '</table>';
     }
 </script>
 </body>
