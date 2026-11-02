@@ -1,5 +1,6 @@
 package efub.awa.moamoa.global.websocket.exception;
 
+import efub.awa.moamoa.global.common.response.ApiResponse;
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +14,6 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.socket.messaging.StompSubProtocolErrorHandler;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
-
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -43,7 +42,7 @@ public class StompErrorHandler extends StompSubProtocolErrorHandler {
         byte[] body;
         try {
             body = objectMapper.writeValueAsBytes(
-                    Map.of("code", code.name(), "message", code.getMessage())
+                    ApiResponse.fail(code)
             );
         } catch (JacksonException e){
             body = new byte[0];
