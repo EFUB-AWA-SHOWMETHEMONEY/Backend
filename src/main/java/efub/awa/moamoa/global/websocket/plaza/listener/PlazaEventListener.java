@@ -1,12 +1,10 @@
-package efub.awa.moamoa.global.websocket.plaza;
+package efub.awa.moamoa.global.websocket.plaza.listener;
 
-import efub.awa.moamoa.global.exception.CustomException;
-import efub.awa.moamoa.global.exception.ErrorCode;
-import efub.awa.moamoa.global.websocket.plaza.enums.ParticipantState;
+import efub.awa.moamoa.global.websocket.plaza.entity.ParticipantState;
 import efub.awa.moamoa.global.websocket.plaza.enums.PlazaConstants;
-import efub.awa.moamoa.global.websocket.plaza.enums.PlazaEvent;
-import efub.awa.moamoa.member.entity.Member;
-import efub.awa.moamoa.member.repository.MemberRepository;
+import efub.awa.moamoa.global.websocket.plaza.dto.response.PlazaEvent;
+import efub.awa.moamoa.global.websocket.plaza.repository.PlazaParticipantRegistry;
+import efub.awa.moamoa.global.websocket.plaza.service.PlazaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -27,8 +25,8 @@ public class PlazaEventListener {
     private static final String PLAZA_SUB_ID = "plazaSubscriptionId";
 
     private final PlazaParticipantRegistry registry;
-    private final MemberRepository memberRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final PlazaService plazaService;
 
     @EventListener
     public void onSubscribe(SessionSubscribeEvent event) {
@@ -41,12 +39,7 @@ public class PlazaEventListener {
 
         attrs.put(PLAZA_SUB_ID, accessor.getSubscriptionId());
 
-        ParticipantState state = new ParticipantState(
-                memberId, nicknameOf(memberId), Map.of(),
-                PlazaConstants.SPAWN_X, PlazaConstants.SPAWN_Y, accessor.getSessionId()
-        );
-        registry.join(state).ifPresent(prev ->
-                log.info("중복 접속: memberId - {}. 이전 세션 - {}", memberId, prev.sessionId()));
+        ParticipantState state = plazaService.join(memberId, accessor.getSessionId());
         log.info("광장 입장 memberId={} sessionId={}", memberId, accessor.getSessionId());
         messagingTemplate.convertAndSend(PlazaConstants.TOPIC, PlazaEvent.UserJoined.from(state));
     }
@@ -84,14 +77,5 @@ public class PlazaEventListener {
 
     private Long memberIdOf(Map<String, Object> attrs) {
         return attrs != null && attrs.get("memberId") instanceof Long id ? id : null;
-    }
-
-    private String nicknameOf(Long memberId) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> {
-                        log.warn("존재하지 않는 회원입니다 - memberId: {}", memberId);
-                        return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
-                });
-        return member.getNickname();
     }
 }

@@ -1,14 +1,12 @@
-package efub.awa.moamoa.global.websocket.plaza.dto;
+package efub.awa.moamoa.global.websocket.plaza.dto.response;
 
-import efub.awa.moamoa.global.websocket.plaza.enums.ParticipantState;
-
-import java.util.List;
-import java.util.Map;
+import efub.awa.moamoa.global.websocket.plaza.entity.EquippedItem;
+import efub.awa.moamoa.global.websocket.plaza.entity.ParticipantState;
 
 public record ParticipantResponse(
         Long memberId,
         String nickname,
-        Map<String, Object> appearance,
+        EquippedItem equippedItem,
         int x,
         int y
 
@@ -17,7 +15,7 @@ public record ParticipantResponse(
         return new ParticipantResponse(
                 state.memberId(),
                 state.nickname(),
-                state.appearance(),
+                state.equippedItem(),
                 state.x(),
                 state.y()
         );
