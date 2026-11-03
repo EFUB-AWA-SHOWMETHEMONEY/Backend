@@ -45,4 +45,12 @@ public sealed interface PlazaEvent {
             );
         }
     }
+
+    record PlazaChat(String type, Long memberId, String nickname, String text, long ts) implements PlazaEvent {
+        public static PlazaChat of (ParticipantState state, String text) {
+            return new PlazaChat(
+                    "chat_message", state.memberId(), state.nickname(), text, System.currentTimeMillis()
+            );
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package efub.awa.moamoa.websocket.plaza.repository;
 
+import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.websocket.plaza.entity.EquippedItem;
 import efub.awa.moamoa.websocket.plaza.entity.ParticipantState;
 import org.springframework.stereotype.Component;
@@ -64,5 +65,11 @@ public class PlazaParticipantRegistry {
 
     public Optional<ParticipantState> find(Long memberId) {
         return Optional.ofNullable(participants.get(memberId));
+    }
+
+    public Optional<ParticipantState> findBySession(Long memberId, String sessionId) {
+        return find(memberId)
+                .filter(state ->
+                        state.sessionId().equals(sessionId));
     }
 }

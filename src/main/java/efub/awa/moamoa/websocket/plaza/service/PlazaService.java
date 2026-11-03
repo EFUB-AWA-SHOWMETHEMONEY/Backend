@@ -2,8 +2,9 @@ package efub.awa.moamoa.websocket.plaza.service;
 
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
+import efub.awa.moamoa.websocket.plaza.dto.request.ChatRequestDto;
 import efub.awa.moamoa.websocket.plaza.dto.request.MoveRequestDto;
-import efub.awa.moamoa.websocket.plaza.dto.response.PlazaEvent.PositionUpdate;
+import efub.awa.moamoa.websocket.plaza.dto.response.PlazaEvent;
 import efub.awa.moamoa.websocket.plaza.entity.EquippedItem;
 import efub.awa.moamoa.websocket.plaza.entity.ParticipantState;
 import efub.awa.moamoa.websocket.plaza.enums.PlazaConstants;
@@ -29,11 +30,7 @@ public class PlazaService {
 
     @Transactional(readOnly = true)
     public ParticipantState join(Long memberId, String sessionId) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> {
-                    log.warn("존재하지 않는 회원 - memberId: {}", memberId);
-                    return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
-                });
+        Member member = findMemberById(memberId);
         EquippedItem equippedItem = inventoryRepository.findEquippedItems(memberId)
                 .stream().findFirst()
                 .map(EquippedItem::from)
@@ -49,15 +46,38 @@ public class PlazaService {
 
         return state;
     }
-    public Optional<PositionUpdate> move(Long memberId, String sessionId, MoveRequestDto request) {
-        if (registry.find(memberId).isEmpty()) {
-            throw new CustomException(ErrorCode.NOT_IN_ROOM);
-        }
+    public Optional<PlazaEvent.PositionUpdate> move(Long memberId, String sessionId, MoveRequestDto request) {
+        isPresent(memberId);
 
         int x = Math.min(Math.max(request.x(), 0), PlazaConstants.WIDTH-1);
         int y = Math.min(Math.max(request.y(), 0), PlazaConstants.HEIGHT-1);
         return registry.updatePosition(memberId, sessionId, x, y, request.seq())
-                .map(PositionUpdate::from);
+                .map(PlazaEvent.PositionUpdate::from);
     }
 
+    public PlazaEvent.PlazaChat chat(Long memberId, String sessionId, ChatRequestDto request) {
+        String text = request.text();
+
+        ParticipantState state = registry.findBySession(memberId, sessionId)
+                .orElseThrow(() -> {
+                    log.warn("광장에 채팅 거부 - memberId: {}, sessionId: {}", memberId, sessionId);
+                    return new CustomException(ErrorCode.NOT_IN_ROOM);
+                });
+
+        return PlazaEvent.PlazaChat.of(state, text);
+    }
+
+    private void isPresent(Long memberId) {
+        if (registry.find(memberId).isEmpty()) {
+            throw new CustomException(ErrorCode.NOT_IN_ROOM);
+        }
+    }
+
+    private Member findMemberById(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> {
+                    log.warn("존재하지 않는 회원 - memberId: {}", memberId);
+                    return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+                });
+    }
 }
