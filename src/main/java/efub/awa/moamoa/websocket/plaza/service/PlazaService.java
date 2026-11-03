@@ -12,6 +12,7 @@ import efub.awa.moamoa.websocket.plaza.repository.PlazaParticipantRegistry;
 import efub.awa.moamoa.item.repository.InventoryRepository;
 import efub.awa.moamoa.member.entity.Member;
 import efub.awa.moamoa.member.repository.MemberRepository;
+import efub.awa.moamoa.websocket.plaza.support.ChatFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class PlazaService {
     private final PlazaParticipantRegistry registry;
     private final MemberRepository memberRepository;
     private final InventoryRepository inventoryRepository;
+    private final ChatFilter chatFilter;
 
     @Transactional(readOnly = true)
     public ParticipantState join(Long memberId, String sessionId) {
@@ -56,13 +58,12 @@ public class PlazaService {
     }
 
     public PlazaEvent.PlazaChat chat(Long memberId, String sessionId, ChatRequestDto request) {
-        String text = request.text();
-
         ParticipantState state = registry.findBySession(memberId, sessionId)
                 .orElseThrow(() -> {
                     log.warn("광장에 채팅 거부 - memberId: {}, sessionId: {}", memberId, sessionId);
                     return new CustomException(ErrorCode.NOT_IN_ROOM);
                 });
+        String text = chatFilter.mask(request.text().trim());
 
         return PlazaEvent.PlazaChat.of(state, text);
     }

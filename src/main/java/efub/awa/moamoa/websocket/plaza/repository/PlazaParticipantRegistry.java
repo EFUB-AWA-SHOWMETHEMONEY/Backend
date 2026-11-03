@@ -1,6 +1,5 @@
 package efub.awa.moamoa.websocket.plaza.repository;
 
-import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.websocket.plaza.entity.EquippedItem;
 import efub.awa.moamoa.websocket.plaza.entity.ParticipantState;
 import org.springframework.stereotype.Component;
