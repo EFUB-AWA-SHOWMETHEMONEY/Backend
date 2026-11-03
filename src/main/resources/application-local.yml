@@ -12,3 +12,6 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6380}
       password: ${REDIS_PASSWORD:moamoa}
+jwt:
+  # local 전용 개발용 기본값. 운영 환경에서는 반드시 JWT_SECRET 환경변수로 주입 (HS256: 32바이트 이상)
+  secret: ${JWT_SECRET:moamoa-local-dev-secret-key-do-not-use-in-production-0123456789}
