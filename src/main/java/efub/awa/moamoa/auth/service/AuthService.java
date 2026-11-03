@@ -64,6 +64,28 @@ public class AuthService {
         return new AuthResult(AuthResponse.of(member.getId(), member.getNickname(), tokens), tokens.refreshToken());
     }
 
+    //Refresh Token으로 Access Token 재발급 (Refresh Token도 새로 발급하는 회전 방식)
+    public IssuedTokens reissue(String refreshToken) {
+        Long memberId = tokenService.validateRefreshToken(refreshToken);
+
+        //회원은 삭제됐는데 Refresh Token만 남아 있는 경우
+        if (!memberService.existsById(memberId)) {
+            tokenService.deleteRefreshToken(memberId);
+            throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        IssuedTokens tokens = tokenService.issueTokens(memberId);
+        log.info("토큰 재발급 성공 - memberId: {}", memberId);
+
+        return tokens;
+    }
+
+    //저장된 Refresh Token 삭제 (이미 없어도 성공)
+    public void logout(Long memberId) {
+        tokenService.deleteRefreshToken(memberId);
+        log.info("로그아웃 성공 - memberId: {}", memberId);
+    }
+
     //소셜 로그인에서 신규 회원으로 확인된 사용자의 추가 가입 (registerToken은 쿠키로 받는다)
     public AuthResult socialSignUp(String registerToken, SocialSignUpRequest request) {
         //쿠키 없음, 위조, 만료, 지원하지 않는 소셜 종류는 모두 같은 응답

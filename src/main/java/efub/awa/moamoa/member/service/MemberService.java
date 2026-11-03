@@ -38,6 +38,11 @@ public class MemberService {
     }
 
     @Transactional(readOnly = true)
+    public boolean existsById(Long memberId) {
+        return memberRepository.existsById(memberId);
+    }
+
+    @Transactional(readOnly = true)
     public boolean existsByOauthId(String oauthId) {
         return kakaoMemberRepository.existsByOauthId(oauthId);
     }

@@ -24,4 +24,15 @@ public class RefreshTokenCookieProvider {
                 .maxAge(Duration.ofSeconds(jwtProvider.getRefreshTokenExpirationSeconds()))
                 .build();
     }
+
+    //쿠키 삭제용 (Max-Age=0)
+    public ResponseCookie expire() {
+        return ResponseCookie.from(COOKIE_NAME, "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(Duration.ZERO)
+                .build();
+    }
 }
