@@ -2,7 +2,9 @@ package efub.awa.moamoa.auth.controller;
 
 import efub.awa.moamoa.auth.dto.AuthResponse;
 import efub.awa.moamoa.auth.dto.AuthResult;
+import efub.awa.moamoa.auth.dto.IssuedTokens;
 import efub.awa.moamoa.auth.dto.LoginRequest;
+import efub.awa.moamoa.auth.dto.ReissueResponse;
 import efub.awa.moamoa.auth.dto.SignUpRequest;
 import efub.awa.moamoa.auth.dto.SocialSignUpRequest;
 import efub.awa.moamoa.auth.service.AuthService;
@@ -15,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -62,5 +65,26 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookieProvider.create(result.refreshToken()).toString())
                 .header(HttpHeaders.SET_COOKIE, registerTokenCookieProvider.expire().toString())
                 .body(ApiResponse.success("소셜 회원가입 요청이 성공했습니다.", result.response()));
+    }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<ApiResponse<ReissueResponse>> reissue(
+            @CookieValue(name = RefreshTokenCookieProvider.COOKIE_NAME, required = false) String refreshToken) {
+        log.info("토큰 재발급 요청");
+        IssuedTokens tokens = authService.reissue(refreshToken);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookieProvider.create(tokens.refreshToken()).toString())
+                .body(ApiResponse.success("토큰 재발급 요청이 성공했습니다.", ReissueResponse.of(tokens)));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(@AuthenticationPrincipal Long memberId) {
+        log.info("로그아웃 요청");
+        authService.logout(memberId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookieProvider.expire().toString())
+                .body(ApiResponse.success("로그아웃 요청이 성공했습니다."));
     }
 }
