@@ -1,4 +1,9 @@
 package efub.awa.moamoa.member.repository;
 
-public interface MemberRepository {
+import efub.awa.moamoa.member.entity.Member;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MemberRepository extends JpaRepository<Member, Long> {
+
+    boolean existsByNickname(String nickname);
 }
