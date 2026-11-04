@@ -3,7 +3,37 @@ spring:
     name: MoaMoa
   profiles:
     default: local
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao: # registrationId
+            # 실제 값은 환경변수로 주입 (기본값 not-set은 서버 기동용 더미)
+            client-id: ${KAKAO_CLIENT_ID:not-set}
+            client-secret: ${KAKAO_CLIENT_SECRET:not-set}
+            # 카카오 콘솔에 등록하는 Redirect URI: {백엔드 주소}/login/oauth2/code/kakao
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            client-name: kakao-login
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+jwt:
+  access-token-expiration: 3600 # 초 (1시간)
+  refresh-token-expiration: 1209600 # 초 (14일)
+  register-token-expiration: 600 # 초 (10분, 소셜 추가 가입용)
 
 app:
+  frontend:
+    # 소셜 로그인 후 리다이렉트할 프론트 주소 (프론트팀과 확정 필요)
+    base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+    login-success-path: /auth/callback
+    signup-path: /signup/social
+    login-failure-path: /login
+
   websocket:
     allowed-origins: ${WS_ALLOWED_ORIGINS}

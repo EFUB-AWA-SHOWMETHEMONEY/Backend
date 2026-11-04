@@ -4,6 +4,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+jwt:
+  secret: moamoa-test-profile-secret-key-0123456789-abcdefghij
 
 app:
   websocket:
