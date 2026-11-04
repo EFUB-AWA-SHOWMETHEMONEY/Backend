@@ -34,3 +34,6 @@ app:
     login-success-path: /auth/callback
     signup-path: /signup/social
     login-failure-path: /login
+
+  websocket:
+    allowed-origins: ${WS_ALLOWED_ORIGINS}

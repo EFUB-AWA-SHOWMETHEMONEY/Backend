@@ -27,7 +27,15 @@ public enum ErrorCode {
     ALREADY_REGISTERED(409, "이미 가입된 소셜 계정입니다."),
 
     //Auth - 502
-    OAUTH_SERVER_ERROR(502, "소셜 서버와 통신하지 못했습니다.");
+    OAUTH_SERVER_ERROR(502, "소셜 서버와 통신하지 못했습니다."),
+
+    //WebSocket - 401
+    INVALID_STOMP_AUTH_HEADER(401, "STOMP 인증 헤더가 필요합니다."),
+    INVALID_AUTH_TOKEN(401, "유효하지 않은 인증 토큰입니다."),
+    EXPIRED_AUTH_TOKEN(401, "만료된 인증 토큰입니다."),
+
+    //Member
+    MEMBER_NOT_FOUND(404, "존재하지 않는 회원입니다.");
 
     private final int status;
     private final String message;

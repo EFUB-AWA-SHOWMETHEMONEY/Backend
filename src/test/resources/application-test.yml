@@ -6,3 +6,7 @@ spring:
       ddl-auto: create-drop
 jwt:
   secret: moamoa-test-profile-secret-key-0123456789-abcdefghij
+
+app:
+  websocket:
+    allowed-origins: http://localhost
