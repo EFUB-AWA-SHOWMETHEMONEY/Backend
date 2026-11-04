@@ -34,8 +34,11 @@ public enum ErrorCode {
     INVALID_AUTH_TOKEN(401, "유효하지 않은 인증 토큰입니다."),
     EXPIRED_AUTH_TOKEN(401, "만료된 인증 토큰입니다."),
 
-    //Member
-    MEMBER_NOT_FOUND(404, "존재하지 않는 회원입니다.");
+    //Member - 404
+    MEMBER_NOT_FOUND(404, "존재하지 않는 회원입니다."),
+
+    //Plaza - 400
+    NOT_IN_ROOM(400, "광장에 존재하지 않는 회원입니다.");
 
     private final int status;
     private final String message;
