@@ -3,6 +3,7 @@ package efub.awa.moamoa.balance.service;
 import efub.awa.moamoa.balance.entity.BalanceHistory;
 import efub.awa.moamoa.balance.enums.BalanceChangeType;
 import efub.awa.moamoa.balance.enums.ReferenceType;
+import efub.awa.moamoa.balance.dto.TransferResult;
 import efub.awa.moamoa.balance.enums.TransferType;
 import efub.awa.moamoa.balance.repository.BalanceHistoryRepository;
 import efub.awa.moamoa.global.exception.CustomException;
@@ -26,23 +27,27 @@ public class BalanceService {
     private final BalanceHistoryRepository balanceHistoryRepository;
 
     @Transactional
-    public void withdraw(Long memberId, Long amount, BalanceChangeType type,
+    public Long withdraw(Long memberId, Long amount, BalanceChangeType type,
                          ReferenceType refType, Long refId) {
         Member member = getMember(memberId);
         Long balanceAfter = member.withdraw(amount);
         saveHistory(member, -amount, balanceAfter, type, refType, refId);
+
+        return member.getCapital();
     }
 
     @Transactional
-    public void deposit(Long memberId, Long amount, BalanceChangeType type,
+    public Long deposit(Long memberId, Long amount, BalanceChangeType type,
                         ReferenceType refType, Long refId) {
         Member member = getMember(memberId);
         Long balanceAfter = member.deposit(amount);
         saveHistory(member, amount, balanceAfter, type, refType, refId);
+
+        return member.getCapital();
     }
 
     @Transactional
-    public void transfer(Long fromId, Long toId, Long amount, TransferType transferType, Long refId) {
+    public TransferResult transfer(Long fromId, Long toId, Long amount, TransferType transferType, Long refId) {
         if (fromId.equals(toId)) {
             throw new CustomException(ErrorCode.INVALID_TRANSFER_TARGET);
         }
@@ -60,6 +65,8 @@ public class BalanceService {
 
         saveHistory(from, -amount, fromBalanceAfter, transferType.getSendType(), transferType.getReferenceType(), refId );
         saveHistory(to, amount, toBalanceAfter, transferType.getReceiveType(), transferType.getReferenceType(), refId );
+
+        return new TransferResult(fromBalanceAfter, toBalanceAfter);
     }
 
     private void saveHistory(Member member, Long signedAmount, Long balanceAfter,
