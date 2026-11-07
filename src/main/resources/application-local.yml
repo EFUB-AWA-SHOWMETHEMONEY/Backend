@@ -6,7 +6,9 @@ spring:
     password: ${DB_PASSWORD:moamoa}
   jpa:
     hibernate:
-      ddl-auto: update
+      # local 전용: 매 기동 시 스키마를 재생성한다 (엔티티 변경이 바로 반영됨)
+      # 운영/공용 DB를 가리킨 채 실행하면 데이터가 사라지므로 이 파일 밖으로 복사하지 말 것
+      ddl-auto: create
     show-sql: true
   data:
     redis:
