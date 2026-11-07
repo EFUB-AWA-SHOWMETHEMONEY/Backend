@@ -37,6 +37,9 @@ public enum ErrorCode {
     //Member - 404
     MEMBER_NOT_FOUND(404, "존재하지 않는 회원입니다."),
 
+    //Attendance
+    ALREADY_RECEIVED_REWARD(409, "이미 오늘의 보상을 받았습니다."),
+
     //Plaza - 400
     NOT_IN_ROOM(400, "광장에 존재하지 않는 회원입니다."),
 
