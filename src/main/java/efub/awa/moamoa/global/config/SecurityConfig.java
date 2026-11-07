@@ -30,8 +30,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/logout").authenticated()
-                        .anyRequest().permitAll())
+                        .requestMatchers("/", "/ws/**",
+                                "/api/auth/signup", "/api/auth/login",
+                                "/api/auth/social/**", "/api/auth/reissue").permitAll()
+                        .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 //@Component로 등록하면 서블릿 필터로 중복 등록되므로 여기서 직접 생성
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class)
