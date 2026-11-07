@@ -1,8 +1,9 @@
-package efub.awa.moamoa.member.entity;
+package efub.awa.moamoa.balance.entity;
 
 import efub.awa.moamoa.global.common.entity.BaseEntity;
-import efub.awa.moamoa.member.enums.BalanceChangeType;
-import efub.awa.moamoa.member.enums.ReferenceType;
+import efub.awa.moamoa.member.entity.Member;
+import efub.awa.moamoa.balance.enums.BalanceChangeType;
+import efub.awa.moamoa.balance.enums.ReferenceType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

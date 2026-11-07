@@ -1,4 +1,4 @@
-package efub.awa.moamoa.member.enums;
+package efub.awa.moamoa.balance.enums;
 
 public enum ReferenceType {
     AUCTION, //auction id
