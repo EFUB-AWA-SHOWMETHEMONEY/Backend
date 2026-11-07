@@ -1,6 +1,8 @@
 package efub.awa.moamoa.member.entity;
 
 import efub.awa.moamoa.global.common.entity.BaseEntity;
+import efub.awa.moamoa.global.exception.CustomException;
+import efub.awa.moamoa.global.exception.ErrorCode;
 import efub.awa.moamoa.member.enums.Gender;
 import efub.awa.moamoa.member.enums.MemberType;
 import jakarta.persistence.Column;
@@ -54,5 +56,29 @@ public class Member extends BaseEntity {
         this.capital = capital;
         this.gender = gender;
         this.alarm = true;
+    }
+
+    //Member의 withdraw/deposit의 파라미터는 항상 양수
+    public Long withdraw(Long amount) {
+        validateBalance(amount);
+        if(this.capital < amount) {
+            throw new CustomException(ErrorCode.INSUFFICIENT_BALANCE);
+        }
+        this.capital -= amount;
+
+        return this.capital;
+    }
+
+    public Long deposit(Long amount) {
+        validateBalance(amount);
+        this.capital += amount;
+
+        return this.capital;
+    }
+
+    private void validateBalance(Long amount) {
+        if (amount == null || amount <= 0) {
+            throw new CustomException(ErrorCode.INVALID_AMOUNT);
+        }
     }
 }

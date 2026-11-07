@@ -6,6 +6,7 @@ import efub.awa.moamoa.balance.enums.BalanceChangeType;
 import efub.awa.moamoa.balance.enums.ReferenceType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -44,4 +45,15 @@ public class BalanceHistory extends BaseEntity {
 
     @Column(name = "reference_id", updatable = false)
     private Long referenceId;
+
+    @Builder
+    public BalanceHistory (Member member, Long amount, Long balanceAfter, BalanceChangeType type,
+                           ReferenceType refType, Long refId) {
+        this.member = member;
+        this.amount = amount;
+        this.balanceAfter = balanceAfter;
+        this.type = type;
+        this.referenceType = refType;
+        this.referenceId = refId;
+    }
 }
