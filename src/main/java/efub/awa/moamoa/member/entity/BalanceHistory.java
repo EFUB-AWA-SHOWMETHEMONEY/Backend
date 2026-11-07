@@ -2,6 +2,7 @@ package efub.awa.moamoa.member.entity;
 
 import efub.awa.moamoa.global.common.entity.BaseEntity;
 import efub.awa.moamoa.member.enums.BalanceChangeType;
+import efub.awa.moamoa.member.enums.ReferenceType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -9,7 +10,12 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "balance_history")
+@Table(name = "balance_history",
+indexes = {
+        @Index(name = "idx_balance_history_member_created",
+        columnList = "member_id, created_at"),
+        @Index(name = "idx_balance_history_reference", columnList = "reference_type, reference_id")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BalanceHistory extends BaseEntity {
 
@@ -30,4 +36,11 @@ public class BalanceHistory extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, updatable = false)
     private BalanceChangeType type;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reference_type", updatable = false)
+    private ReferenceType referenceType;
+
+    @Column(name = "reference_id", updatable = false)
+    private Long referenceId;
 }
