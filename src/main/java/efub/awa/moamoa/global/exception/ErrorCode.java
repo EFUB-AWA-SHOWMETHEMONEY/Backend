@@ -38,7 +38,15 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND(404, "존재하지 않는 회원입니다."),
 
     //Plaza - 400
-    NOT_IN_ROOM(400, "광장에 존재하지 않는 회원입니다.");
+    NOT_IN_ROOM(400, "광장에 존재하지 않는 회원입니다."),
+
+    //Transfer
+    INVALID_TRANSFER_TARGET(400, "자기 자신과는 거래할 수 없습니다."),
+
+    //Balance
+    RESOURCE_BUSY(409, "요청이 많아 처리에 실패했습니다. 다시 시도해주세요"),
+    INSUFFICIENT_BALANCE(400, "잔액이 부족합니다"),
+    INVALID_AMOUNT(400, "금액은 0보다 커야합니다.");
 
     private final int status;
     private final String message;

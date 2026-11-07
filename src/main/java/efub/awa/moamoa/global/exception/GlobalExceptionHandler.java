@@ -3,6 +3,8 @@ package efub.awa.moamoa.global.exception;
 import efub.awa.moamoa.global.common.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -46,6 +48,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .collect(Collectors.joining(", "));
 
         return ResponseEntity.status(status).body(ApiResponse.fail(ErrorCode.BAD_REQUEST, message));
+    }
+
+    //락 실패/데드락
+    @ExceptionHandler({PessimisticLockingFailureException.class, CannotAcquireLockException.class})
+    protected ResponseEntity<ApiResponse<Void>> handleLockFailure(Exception e, HttpServletRequest request) {
+        log.warn("잔액 처리 락 획득 실패: requestURI - {}", request.getRequestURI());
+
+        ErrorCode errorCode = ErrorCode.RESOURCE_BUSY;
+        return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.fail(errorCode));
     }
 
     //그 밖의 스프링 표준 예외 (JSON 파싱 실패, 404, 405...): 상태코드 유지, 바디만 ApiResponse
