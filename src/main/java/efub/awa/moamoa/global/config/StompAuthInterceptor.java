@@ -2,8 +2,8 @@ package efub.awa.moamoa.global.config;
 
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
-import efub.awa.moamoa.global.websocket.auth.StompPrincipal;
-import efub.awa.moamoa.global.websocket.auth.StompTokenVerifier;
+import efub.awa.moamoa.websocket.auth.StompPrincipal;
+import efub.awa.moamoa.websocket.auth.StompTokenVerifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;

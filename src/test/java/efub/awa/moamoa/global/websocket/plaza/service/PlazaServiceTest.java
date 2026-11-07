@@ -2,11 +2,15 @@ package efub.awa.moamoa.global.websocket.plaza.service;
 
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
-import efub.awa.moamoa.global.websocket.plaza.dto.request.MoveRequestDto;
-import efub.awa.moamoa.global.websocket.plaza.dto.response.PlazaEvent.PositionUpdate;
-import efub.awa.moamoa.global.websocket.plaza.entity.ParticipantState;
-import efub.awa.moamoa.global.websocket.plaza.enums.PlazaConstants;
-import efub.awa.moamoa.global.websocket.plaza.repository.PlazaParticipantRegistry;
+import efub.awa.moamoa.websocket.plaza.dto.request.ChatRequestDto;
+import efub.awa.moamoa.websocket.plaza.dto.request.MoveRequestDto;
+import efub.awa.moamoa.websocket.plaza.dto.response.PlazaEvent.PlazaChat;
+import efub.awa.moamoa.websocket.plaza.dto.response.PlazaEvent.PositionUpdate;
+import efub.awa.moamoa.websocket.plaza.entity.ParticipantState;
+import efub.awa.moamoa.websocket.plaza.enums.PlazaConstants;
+import efub.awa.moamoa.websocket.plaza.repository.PlazaParticipantRegistry;
+import efub.awa.moamoa.websocket.plaza.service.PlazaService;
+import efub.awa.moamoa.websocket.plaza.support.ChatFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,8 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * move()는 registry만 쓰므로 회원·인벤토리 레포지토리는 주입하지 않는다.
+ * move()·chat()은 registry와 ChatFilter만 쓰므로 회원·인벤토리 레포지토리는 null로 둔다.
+ * null을 넘겨도 통과하는 것 자체가 두 메서드가 DB를 건드리지 않는다는 보증이다.
  * join()은 DB가 필요해 여기서 다루지 않는다.
+ * 금지어 매칭 규칙 자체는 ChatFilterTest에서 다룬다.
  */
 class PlazaServiceTest {
 
@@ -31,7 +37,7 @@ class PlazaServiceTest {
     @BeforeEach
     void setUp() {
         registry = new PlazaParticipantRegistry();
-        service = new PlazaService(registry, null, null);
+        service = new PlazaService(registry, null, null, new ChatFilter());
     }
 
     private void joinPlaza() {
@@ -42,6 +48,10 @@ class PlazaServiceTest {
 
     private MoveRequestDto move(int x, int y, long seq) {
         return new MoveRequestDto(x, y, seq);
+    }
+
+    private ChatRequestDto chat(String text) {
+        return new ChatRequestDto(text);
     }
 
     @Test
@@ -126,5 +136,56 @@ class PlazaServiceTest {
 
         assertThat(service.move(MEMBER, "sess-OLD", move(300, 200, 1L))).isEmpty();
         assertThat(registry.find(MEMBER).orElseThrow().x()).isEqualTo(PlazaConstants.SPAWN_X);
+    }
+
+    @Test
+    @DisplayName("광장에 없으면 채팅도 NOT_IN_ROOM")
+    void chatThrowsWhenNotInPlaza() {
+        assertThatThrownBy(() -> service.chat(MEMBER, SESSION, chat("안녕하세요")))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.NOT_IN_ROOM);
+    }
+
+    @Test
+    @DisplayName("구 세션이 보낸 채팅은 NOT_IN_ROOM (이동과 달리 조용히 무시하지 않는다)")
+    void chatRejectsStaleSession() {
+        joinPlaza();
+
+        assertThatThrownBy(() -> service.chat(MEMBER, "sess-OLD", chat("안녕하세요")))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.NOT_IN_ROOM);
+    }
+
+    @Test
+    @DisplayName("정상 채팅은 레지스트리에 저장된 닉네임으로 나간다")
+    void chatUsesRegisteredNickname() {
+        joinPlaza();
+
+        PlazaChat event = service.chat(MEMBER, SESSION, chat("안녕하세요"));
+
+        assertThat(event.type()).isEqualTo("chat_message");
+        assertThat(event.memberId()).isEqualTo(MEMBER);
+        assertThat(event.nickname()).isEqualTo("테스터");
+        assertThat(event.text()).isEqualTo("안녕하세요");
+    }
+
+    @Test
+    @DisplayName("앞뒤 공백은 제거하고 브로드캐스트한다")
+    void chatTrimsText() {
+        joinPlaza();
+
+        assertThat(service.chat(MEMBER, SESSION, chat("   안녕하세요   ")).text())
+                .isEqualTo("안녕하세요");
+    }
+
+    @Test
+    @DisplayName("금지어는 마스킹해서 브로드캐스트한다")
+    void chatMasksBannedWords() {
+        joinPlaza();
+
+        assertThat(service.chat(MEMBER, SESSION, chat("fuck 하지마")).text())
+                .isEqualTo("**** 하지마");
     }
 }
