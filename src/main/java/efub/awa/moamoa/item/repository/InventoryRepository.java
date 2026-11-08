@@ -10,6 +10,10 @@ import java.util.List;
 
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
+    List<Inventory> findAllByMemberId(Long memberId);
+
+    List<Inventory> findAllByMemberIdAndItemNameContainingOrderById(Long memberId, String keyword);
+
     @Query("""
             select inv.item from Inventory inv
             where inv.member.id = :memberId

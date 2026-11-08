@@ -5,6 +5,7 @@ import efub.awa.moamoa.global.common.entity.BaseEntity;
 import efub.awa.moamoa.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -36,4 +37,11 @@ public class Inventory extends BaseEntity {
     @Column(name = "is_equipped", nullable = false)
     private boolean isEquipped;
 
+    @Builder
+    private Inventory(Member member, Item item, Long quantity, boolean isEquipped) {
+        this.member = member;
+        this.item = item;
+        this.quantity = quantity;
+        this.isEquipped = isEquipped;
+    }
 }
