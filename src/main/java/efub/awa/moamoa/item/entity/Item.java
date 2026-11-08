@@ -4,6 +4,7 @@ import efub.awa.moamoa.global.common.entity.BaseEntity;
 import efub.awa.moamoa.item.enums.ItemGrade;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
@@ -38,5 +39,13 @@ public class Item extends BaseEntity {
     @Column(name = "image_url", nullable = true)
     private String imageUrl;
 
-
+    @Builder
+    private Item(String name, Long price, String description, ItemGrade grade, boolean forSale, String imageUrl) {
+        this.name = name;
+        this.price = price;
+        this.description = description;
+        this.grade = grade;
+        this.forSale = forSale;
+        this.imageUrl = imageUrl;
+    }
 }
