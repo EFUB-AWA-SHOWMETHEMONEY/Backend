@@ -15,4 +15,5 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("select m from Member m where m.id = :memberId")
     Optional<Member> findByIdForUpdate (@Param("memberId") Long memberId);
     boolean existsByNickname(String nickname);
+    Optional<Member> findByNickname(String nickname);
 }
