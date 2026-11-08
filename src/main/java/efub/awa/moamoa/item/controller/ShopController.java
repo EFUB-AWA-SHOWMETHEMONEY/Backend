@@ -1,6 +1,7 @@
 package efub.awa.moamoa.item.controller;
 
 import efub.awa.moamoa.global.common.response.ApiResponse;
+import efub.awa.moamoa.item.dto.response.BuyItemResponse;
 import efub.awa.moamoa.item.dto.response.ShopItemListResponse;
 import efub.awa.moamoa.item.service.ShopService;
 import jakarta.validation.constraints.NotBlank;
@@ -33,5 +34,14 @@ public class ShopController {
 
         ShopItemListResponse response = shopService.searchShopItemList(keyword);
         return ResponseEntity.ok(ApiResponse.success("상점 아이템 검색 요청이 성공했습니다.", response));
+    }
+
+    @PostMapping("/{itemId}/purchase")
+    public ResponseEntity<ApiResponse<BuyItemResponse>> buyShopItem(@AuthenticationPrincipal Long memberId,
+                                                                    @PathVariable Long itemId) {
+        log.info("상점 아이템 구매 API - memberId: {}, itemId: {}", memberId, itemId);
+
+        BuyItemResponse response = shopService.buyShopItem(memberId, itemId);
+        return ResponseEntity.ok(ApiResponse.success("상점 아이템 구매에 성공했습니다.", response));
     }
 }
