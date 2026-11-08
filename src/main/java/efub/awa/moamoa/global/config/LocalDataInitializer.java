@@ -1,5 +1,10 @@
 package efub.awa.moamoa.global.config;
 
+import efub.awa.moamoa.item.entity.Inventory;
+import efub.awa.moamoa.item.entity.Item;
+import efub.awa.moamoa.item.enums.ItemGrade;
+import efub.awa.moamoa.item.repository.InventoryRepository;
+import efub.awa.moamoa.item.repository.ItemRepository;
 import efub.awa.moamoa.member.entity.Member;
 import efub.awa.moamoa.member.enums.Gender;
 import efub.awa.moamoa.member.enums.MemberType;
@@ -35,6 +40,8 @@ public class LocalDataInitializer implements CommandLineRunner {
     private static final List<String> MEMBER_SCOPED_KEY_PATTERNS = List.of("refresh:*", "attendance:*");
 
     private final MemberRepository memberRepository;
+    private final ItemRepository itemRepository;
+    private final InventoryRepository inventoryRepository;
     private final MemberService memberService;
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
@@ -44,6 +51,8 @@ public class LocalDataInitializer implements CommandLineRunner {
         clearMemberScopedRedisKeys();
         initSelfLoginMember();
         initPlazaTestMembers();
+        initTestItems();
+        initTestInventory();
     }
 
     //DB가 매 기동 시 재생성되면서 auto_increment도 1부터 다시 시작한다.
@@ -96,5 +105,53 @@ public class LocalDataInitializer implements CommandLineRunner {
                     .build());
             log.info("local 테스트 멤버 생성 완료 - nickname: {}, memberId: {}", nickname, member.getId());
         }
+    }
+
+    //아이템 조회/인벤토리 테스트용 아이템 (등급별, 판매 중/비판매 포함)
+    private void initTestItems() {
+        if (itemRepository.count() > 0) return;
+
+        itemRepository.saveAll(List.of(
+                item("기본 모자", 1000L, "누구나 쓰는 평범한 모자", ItemGrade.NORMAL, true),
+                item("기본 티셔츠", 1500L, "편하게 입는 흰색 티셔츠", ItemGrade.NORMAL, true),
+                item("반짝이 선글라스", 8000L, "햇빛을 막아주는 반짝이는 선글라스", ItemGrade.UNIQUE, true),
+                item("황금 지갑", 20000L, "돈이 잘 모인다는 황금빛 지갑", ItemGrade.UNIQUE, true),
+                item("전설의 왕관", 100000L, "단 하나뿐인 전설의 왕관", ItemGrade.LEGENDARY, true),
+                item("비매품 트로피", 50000L, "이벤트 보상으로만 얻을 수 있는 트로피", ItemGrade.LEGENDARY, false)));
+        log.info("local 테스트 아이템 생성 완료");
+    }
+
+    //member1 인벤토리: 키워드 검색 테스트용 ("기본" -> 2건, "모자" -> 1건, "황금" -> 1건), 기본 모자는 장착 상태
+    private void initTestInventory() {
+        if (inventoryRepository.count() > 0) return;
+
+        Member member = memberRepository.findByNickname(TEST_NICKNAME).orElse(null);
+        if (member == null) {
+            log.warn("'{}' 계정이 없어 local 테스트 인벤토리를 만들지 못했습니다", TEST_NICKNAME);
+            return;
+        }
+
+        List<String> ownedNames = List.of("기본 모자", "기본 티셔츠", "반짝이 선글라스", "황금 지갑");
+        List<Inventory> inventories = itemRepository.findAll().stream()
+                .filter(item -> ownedNames.contains(item.getName()))
+                .map(item -> Inventory.builder()
+                        .member(member)
+                        .item(item)
+                        .quantity(1L)
+                        .isEquipped(item.getName().equals("기본 모자"))
+                        .build())
+                .toList();
+        inventoryRepository.saveAll(inventories);
+        log.info("local 테스트 인벤토리 생성 완료 - memberId: {}, {}개", member.getId(), inventories.size());
+    }
+
+    private Item item(String name, Long price, String description, ItemGrade grade, boolean forSale) {
+        return Item.builder()
+                .name(name)
+                .price(price)
+                .description(description)
+                .grade(grade)
+                .forSale(forSale)
+                .build();
     }
 }

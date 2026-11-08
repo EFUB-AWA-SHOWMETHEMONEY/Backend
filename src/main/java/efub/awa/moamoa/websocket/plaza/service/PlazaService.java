@@ -2,6 +2,7 @@ package efub.awa.moamoa.websocket.plaza.service;
 
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
+import efub.awa.moamoa.item.service.InventoryService;
 import efub.awa.moamoa.websocket.plaza.dto.request.ChatRequestDto;
 import efub.awa.moamoa.websocket.plaza.dto.request.MoveRequestDto;
 import efub.awa.moamoa.websocket.plaza.dto.response.PlazaEvent;
@@ -9,7 +10,6 @@ import efub.awa.moamoa.websocket.plaza.entity.EquippedItem;
 import efub.awa.moamoa.websocket.plaza.entity.ParticipantState;
 import efub.awa.moamoa.websocket.plaza.enums.PlazaConstants;
 import efub.awa.moamoa.websocket.plaza.repository.PlazaParticipantRegistry;
-import efub.awa.moamoa.item.repository.InventoryRepository;
 import efub.awa.moamoa.member.entity.Member;
 import efub.awa.moamoa.member.repository.MemberRepository;
 import efub.awa.moamoa.websocket.plaza.support.ChatFilter;
@@ -27,13 +27,13 @@ public class PlazaService {
 
     private final PlazaParticipantRegistry registry;
     private final MemberRepository memberRepository;
-    private final InventoryRepository inventoryRepository;
+    private final InventoryService inventoryService;
     private final ChatFilter chatFilter;
 
     @Transactional(readOnly = true)
     public ParticipantState join(Long memberId, String sessionId) {
         Member member = findMemberById(memberId);
-        EquippedItem equippedItem = inventoryRepository.findEquippedItems(memberId)
+        EquippedItem equippedItem = inventoryService.findEquippedItems(memberId)
                 .stream().findFirst()
                 .map(EquippedItem::from)
                 .orElse(null);
