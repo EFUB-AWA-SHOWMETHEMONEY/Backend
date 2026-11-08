@@ -44,4 +44,9 @@ public class Inventory extends BaseEntity {
         this.quantity = quantity;
         this.isEquipped = isEquipped;
     }
+
+    public boolean toggleEquipped() {
+        this.isEquipped = !this.isEquipped;
+        return this.isEquipped;
+    }
 }
