@@ -56,6 +56,16 @@ public class Member extends BaseEntity {
         this.alarm = true;
     }
 
+    //닉네임, 나이 부분 수정 (null인 항목은 수정하지 않음)
+    public void updateProfile(String nickname, Integer age) {
+        if (nickname != null) {
+            this.nickname = nickname;
+        }
+        if (age != null) {
+            this.age = age;
+        }
+    }
+
     //Member의 withdraw/deposit의 파라미터는 항상 양수
     public Long withdraw(Long amount) {
         validateBalance(amount);

@@ -4,6 +4,7 @@ import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
 import efub.awa.moamoa.item.entity.Item;
 import efub.awa.moamoa.item.service.InventoryService;
+import efub.awa.moamoa.member.dto.request.UpdateMemberRequest;
 import efub.awa.moamoa.member.dto.response.MemberInfoResponse;
 import efub.awa.moamoa.member.dto.response.MemberInfoResponse.EquippedItemResponse;
 import efub.awa.moamoa.member.dto.response.NicknameCheckResponse;
@@ -16,6 +17,7 @@ import efub.awa.moamoa.member.repository.MemberRepository;
 import efub.awa.moamoa.member.repository.SelfMemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,19 +71,66 @@ public class MemberService {
     //내 정보 조회 (회원 기본 정보 + 장착 아이템 목록, 장착 아이템은 itemId 오름차순)
     @Transactional(readOnly = true)
     public MemberInfoResponse getMyInfo(Long memberId) {
-        Member member = memberRepository.findById(memberId)
+        Member member = getMember(memberId);
+
+        log.info("내 정보 조회 성공 - memberId: {}", memberId);
+        return toMemberInfoResponse(member);
+    }
+
+    //내 정보 수정 (닉네임, 나이 부분 수정: null인 항목은 수정하지 않음)
+    @Transactional
+    public MemberInfoResponse updateMyInfo(Long memberId, UpdateMemberRequest request) {
+        if (request.hasNoUpdate()) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+
+        Member member = getMember(memberId);
+
+        String nickname = request.nickname();
+        if (nickname != null) {
+            //본인을 제외하고 대소문자 구분 없이 중복 검사 (본인의 현재 닉네임은 중복이 아님)
+            boolean usedByOthers = memberRepository.findByNickname(nickname)
+                    .filter(other -> !other.getId().equals(memberId))
+                    .isPresent();
+            if (usedByOthers) {
+                throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
+            }
+        }
+
+        member.updateProfile(nickname, request.age());
+        flushNicknameChange(nickname);
+
+        log.info("내 정보 수정 성공 - memberId: {}", memberId);
+        return toMemberInfoResponse(member);
+    }
+
+    //사전 검사를 통과한 뒤 동시에 같은 닉네임을 쓴 경우: 변경 사항을 바로 반영해서 unique 제약 위반을 이 안에서 DUPLICATE_NICKNAME으로 변환
+    private void flushNicknameChange(String nickname) {
+        if (nickname == null) {
+            return;
+        }
+        try {
+            memberRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+    }
+
+    private Member getMember(Long memberId) {
+        return memberRepository.findById(memberId)
                 .orElseThrow(() -> {
                     log.warn("존재하지 않는 회원 - memberId: {}", memberId);
                     return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
                 });
+    }
 
+    private MemberInfoResponse toMemberInfoResponse(Member member) {
         //TODO: S3 이미지 링크 받아오는걸로 수정 (다른 아이템 API와 동일하게 Item.imageUrl 사용)
-        List<EquippedItemResponse> equippedItemList = inventoryService.findEquippedItems(memberId).stream()
+        List<EquippedItemResponse> equippedItemList = inventoryService.findEquippedItems(member.getId()).stream()
                 .sorted(Comparator.comparing(Item::getId))
                 .map(item -> EquippedItemResponse.of(item, item.getImageUrl()))
                 .toList();
 
-        log.info("내 정보 조회 성공 - memberId: {}", memberId);
         return MemberInfoResponse.of(member, equippedItemList);
     }
 
