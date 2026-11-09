@@ -14,6 +14,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     Optional<Inventory> findByIdAndMemberId(Long inventoryId, Long memberId);
     List<Inventory> findAllByMemberId(Long memberId);
     List<Inventory> findAllByMemberIdAndItemNameContainingOrderById(Long memberId, String keyword);
+    Optional<Inventory> findByMemberIdAndItemId(Long memberId, Long itemId);
 
     @Query("""
             select inv from Inventory inv

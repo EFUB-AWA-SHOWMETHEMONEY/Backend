@@ -49,4 +49,6 @@ public class Inventory extends BaseEntity {
         this.isEquipped = !this.isEquipped;
         return this.isEquipped;
     }
+
+    public void increaseQuantity() { this.quantity += 1;}
 }

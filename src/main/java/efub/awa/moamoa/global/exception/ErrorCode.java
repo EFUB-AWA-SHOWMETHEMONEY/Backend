@@ -45,6 +45,7 @@ public enum ErrorCode {
 
     //Item
     ITEM_NOT_FOUND(404, "존재하지 않는 아이템입니다."),
+    ITEM_NOT_FOR_SALE(400, "상점에서 판매하지 않는 아이템입니다."),
 
     //Inventory
     INVENTORY_NOT_FOUND(404, "인벤토리에 존재하지 않는 아이템입니다."),

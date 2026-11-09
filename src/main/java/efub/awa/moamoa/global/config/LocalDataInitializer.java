@@ -35,6 +35,7 @@ public class LocalDataInitializer implements CommandLineRunner {
     private static final String TEST_PASSWORD = "pw1";
     private static final String TEST_NICKNAME = "member1";
     private static final int TEST_AGE = 20;
+    private static final long TEST_CAPITAL = 100000L;
 
     //memberId를 키에 포함하는 Redis 데이터 (DB 재생성 시 다른 회원을 가리키게 되므로 함께 비운다)
     private static final List<String> MEMBER_SCOPED_KEY_PATTERNS = List.of("refresh:*", "attendance:*");
@@ -87,7 +88,12 @@ public class LocalDataInitializer implements CommandLineRunner {
                 TEST_AGE,
                 Gender.FEMALE);
 
-        log.info("local 테스트 계정 생성 완료 - loginId: {}, memberId: {}", TEST_LOGIN_ID, member.getId());
+        //구매 등 잔액이 필요한 API 테스트를 위해 충전 (run()이 트랜잭션이 아니라 save로 반영)
+        member.deposit(TEST_CAPITAL);
+        memberRepository.save(member);
+
+        log.info("local 테스트 계정 생성 완료 - loginId: {}, memberId: {}, capital: {}",
+                TEST_LOGIN_ID, member.getId(), member.getCapital());
     }
 
     //광장 테스트용 멤버 (로그인 자격 없음, memberId로만 사용)
