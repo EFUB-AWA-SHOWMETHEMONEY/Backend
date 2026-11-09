@@ -3,7 +3,6 @@ package efub.awa.moamoa.member.service;
 import efub.awa.moamoa.member.entity.KakaoMember;
 import efub.awa.moamoa.member.entity.Member;
 import efub.awa.moamoa.member.entity.SelfMember;
-import efub.awa.moamoa.member.enums.Gender;
 import efub.awa.moamoa.member.enums.MemberType;
 import efub.awa.moamoa.member.repository.KakaoMemberRepository;
 import efub.awa.moamoa.member.repository.MemberRepository;
@@ -59,9 +58,9 @@ public class MemberService {
 
     //Member + SelfMember를 한 트랜잭션으로 저장 (중복 제약 위반 시 DataIntegrityViolationException 발생)
     @Transactional
-    public Member createSelfMember(String loginId, String encodedPassword, String nickname,
-                                   Integer age, Gender gender) {
-        Member member = saveMember(nickname, age, MemberType.SELF, gender);
+    public Member createSelfMember(String loginId, String encodedPassword, String name, String nickname,
+                                   Integer age) {
+        Member member = saveMember(name, nickname, age, MemberType.SELF);
 
         selfMemberRepository.save(SelfMember.builder()
                 .member(member)
@@ -75,8 +74,8 @@ public class MemberService {
 
     //Member + KakaoMember를 한 트랜잭션으로 저장 (중복 제약 위반 시 DataIntegrityViolationException 발생)
     @Transactional
-    public Member createKakaoMember(String oauthId, String nickname, Integer age, Gender gender) {
-        Member member = saveMember(nickname, age, MemberType.KAKAO, gender);
+    public Member createKakaoMember(String oauthId, String name, String nickname, Integer age) {
+        Member member = saveMember(name, nickname, age, MemberType.KAKAO);
 
         kakaoMemberRepository.save(KakaoMember.builder()
                 .oauthId(oauthId)
@@ -87,13 +86,13 @@ public class MemberService {
         return member;
     }
 
-    private Member saveMember(String nickname, Integer age, MemberType type, Gender gender) {
+    private Member saveMember(String name, String nickname, Integer age, MemberType type) {
         return memberRepository.save(Member.builder()
+                .name(name)
                 .nickname(nickname)
                 .age(age)
                 .type(type)
                 .capital(INITIAL_CAPITAL)
-                .gender(gender)
                 .build());
     }
 }

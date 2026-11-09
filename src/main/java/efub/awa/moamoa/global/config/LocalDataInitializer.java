@@ -6,7 +6,6 @@ import efub.awa.moamoa.item.enums.ItemGrade;
 import efub.awa.moamoa.item.repository.InventoryRepository;
 import efub.awa.moamoa.item.repository.ItemRepository;
 import efub.awa.moamoa.member.entity.Member;
-import efub.awa.moamoa.member.enums.Gender;
 import efub.awa.moamoa.member.enums.MemberType;
 import efub.awa.moamoa.member.repository.MemberRepository;
 import efub.awa.moamoa.member.service.MemberService;
@@ -33,6 +32,7 @@ public class LocalDataInitializer implements CommandLineRunner {
     //비밀번호는 가입 API의 정책(영문+특수문자 8~20자)을 통과하지 못하는 값이라 여기서만 직접 심는다
     private static final String TEST_LOGIN_ID = "member1";
     private static final String TEST_PASSWORD = "pw1";
+    private static final String TEST_NAME = "홍길동";
     private static final String TEST_NICKNAME = "member1";
     private static final int TEST_AGE = 20;
     private static final long TEST_CAPITAL = 100000L;
@@ -84,9 +84,9 @@ public class LocalDataInitializer implements CommandLineRunner {
         Member member = memberService.createSelfMember(
                 TEST_LOGIN_ID,
                 passwordEncoder.encode(TEST_PASSWORD),
+                TEST_NAME,
                 TEST_NICKNAME,
-                TEST_AGE,
-                Gender.FEMALE);
+                TEST_AGE);
 
         //구매 등 잔액이 필요한 API 테스트를 위해 충전 (run()이 트랜잭션이 아니라 save로 반영)
         member.deposit(TEST_CAPITAL);
@@ -103,11 +103,11 @@ public class LocalDataInitializer implements CommandLineRunner {
             if (memberRepository.existsByNickname(nickname)) continue;
 
             Member member = memberRepository.save(Member.builder()
+                    .name(nickname)
                     .nickname(nickname)
                     .age(20 + i)
                     .type(MemberType.SELF)
                     .capital(100000L)
-                    .gender(i % 2 == 0 ? Gender.FEMALE : Gender.MALE)
                     .build());
             log.info("local 테스트 멤버 생성 완료 - nickname: {}, memberId: {}", nickname, member.getId());
         }
