@@ -46,6 +46,9 @@ public enum ErrorCode {
     //Item
     ITEM_NOT_FOUND(404, "존재하지 않는 아이템입니다."),
 
+    //Inventory
+    INVENTORY_NOT_FOUND(404, "인벤토리에 존재하지 않는 아이템입니다."),
+
     //Transfer
     INVALID_TRANSFER_TARGET(400, "자기 자신과는 거래할 수 없습니다."),
 

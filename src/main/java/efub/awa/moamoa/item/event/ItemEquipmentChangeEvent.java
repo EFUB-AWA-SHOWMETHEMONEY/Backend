@@ -1,6 +1,6 @@
 package efub.awa.moamoa.item.event;
 
-public record ItemEquippedEvent(
+public record ItemEquipmentChangeEvent(
         Long memberId,
         Long itemId,
         String itemImageUrl
