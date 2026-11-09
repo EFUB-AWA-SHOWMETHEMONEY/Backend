@@ -8,6 +8,7 @@ import efub.awa.moamoa.global.security.oauth2.OAuth2AuthenticationFailureHandler
 import efub.awa.moamoa.global.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -33,6 +34,9 @@ public class SecurityConfig {
                         .requestMatchers("/", "/ws/**",
                                 "/api/auth/signup", "/api/auth/login",
                                 "/api/auth/social/**", "/api/auth/reissue").permitAll()
+                        //닉네임 중복확인: 회원가입/소셜 추가가입 중에는 Access Token이 없으므로 공개 API
+                        //(닉네임은 광장 등에서 이미 공개되는 정보이므로 새로 노출되는 정보 없음)
+                        .requestMatchers(HttpMethod.GET, "/api/members/nickname-check").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 //@Component로 등록하면 서블릿 필터로 중복 등록되므로 여기서 직접 생성

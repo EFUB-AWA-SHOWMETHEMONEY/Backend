@@ -6,6 +6,7 @@ import efub.awa.moamoa.item.entity.Item;
 import efub.awa.moamoa.item.service.InventoryService;
 import efub.awa.moamoa.member.dto.response.MemberInfoResponse;
 import efub.awa.moamoa.member.dto.response.MemberInfoResponse.EquippedItemResponse;
+import efub.awa.moamoa.member.dto.response.NicknameCheckResponse;
 import efub.awa.moamoa.member.entity.KakaoMember;
 import efub.awa.moamoa.member.entity.Member;
 import efub.awa.moamoa.member.entity.SelfMember;
@@ -82,6 +83,16 @@ public class MemberService {
 
         log.info("내 정보 조회 성공 - memberId: {}", memberId);
         return MemberInfoResponse.of(member, equippedItemList);
+    }
+
+    //닉네임 중복확인 (회원가입의 닉네임 중복 검사와 같은 existsByNickname 사용: 대소문자만 다른 닉네임도 중복)
+    //닉네임을 예약하지 않으므로 확인 이후 가입/수정 시 중복이 생기면 해당 API에서 DUPLICATE_NICKNAME 응답
+    @Transactional(readOnly = true)
+    public NicknameCheckResponse checkNickname(String nickname) {
+        boolean isDuplicated = existsByNickname(nickname);
+
+        log.info("닉네임 중복확인 성공 - nickname: {}, isDuplicated: {}", nickname, isDuplicated);
+        return NicknameCheckResponse.of(isDuplicated);
     }
 
     //Member + SelfMember를 한 트랜잭션으로 저장 (중복 제약 위반 시 DataIntegrityViolationException 발생)
