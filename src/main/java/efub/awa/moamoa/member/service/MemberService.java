@@ -7,6 +7,7 @@ import efub.awa.moamoa.item.service.InventoryService;
 import efub.awa.moamoa.member.dto.request.UpdateMemberRequest;
 import efub.awa.moamoa.member.dto.response.MemberInfoResponse;
 import efub.awa.moamoa.member.dto.response.MemberInfoResponse.EquippedItemResponse;
+import efub.awa.moamoa.member.dto.response.MemberMoneyResponse;
 import efub.awa.moamoa.member.dto.response.NicknameCheckResponse;
 import efub.awa.moamoa.member.entity.KakaoMember;
 import efub.awa.moamoa.member.entity.Member;
@@ -75,6 +76,15 @@ public class MemberService {
 
         log.info("내 정보 조회 성공 - memberId: {}", memberId);
         return toMemberInfoResponse(member);
+    }
+
+    //소유 금액 조회 (요청 시점에 저장된 값)
+    @Transactional(readOnly = true)
+    public MemberMoneyResponse getMyMoney(Long memberId) {
+        Member member = getMember(memberId);
+
+        log.info("소유 금액 조회 성공 - memberId: {}", memberId);
+        return MemberMoneyResponse.of(member);
     }
 
     //내 정보 수정 (닉네임, 나이 부분 수정: null인 항목은 수정하지 않음)
