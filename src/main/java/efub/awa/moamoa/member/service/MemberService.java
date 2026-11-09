@@ -1,5 +1,11 @@
 package efub.awa.moamoa.member.service;
 
+import efub.awa.moamoa.global.exception.CustomException;
+import efub.awa.moamoa.global.exception.ErrorCode;
+import efub.awa.moamoa.item.entity.Item;
+import efub.awa.moamoa.item.service.InventoryService;
+import efub.awa.moamoa.member.dto.response.MemberInfoResponse;
+import efub.awa.moamoa.member.dto.response.MemberInfoResponse.EquippedItemResponse;
 import efub.awa.moamoa.member.entity.KakaoMember;
 import efub.awa.moamoa.member.entity.Member;
 import efub.awa.moamoa.member.entity.SelfMember;
@@ -12,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -25,6 +33,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final SelfMemberRepository selfMemberRepository;
     private final KakaoMemberRepository kakaoMemberRepository;
+    private final InventoryService inventoryService;
 
     @Transactional(readOnly = true)
     public boolean existsByLoginId(String loginId) {
@@ -54,6 +63,25 @@ public class MemberService {
     @Transactional(readOnly = true)
     public Optional<KakaoMember> findKakaoMemberByOauthId(String oauthId) {
         return kakaoMemberRepository.findByOauthId(oauthId);
+    }
+
+    //내 정보 조회 (회원 기본 정보 + 장착 아이템 목록, 장착 아이템은 itemId 오름차순)
+    @Transactional(readOnly = true)
+    public MemberInfoResponse getMyInfo(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> {
+                    log.warn("존재하지 않는 회원 - memberId: {}", memberId);
+                    return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+                });
+
+        //TODO: S3 이미지 링크 받아오는걸로 수정 (다른 아이템 API와 동일하게 Item.imageUrl 사용)
+        List<EquippedItemResponse> equippedItemList = inventoryService.findEquippedItems(memberId).stream()
+                .sorted(Comparator.comparing(Item::getId))
+                .map(item -> EquippedItemResponse.of(item, item.getImageUrl()))
+                .toList();
+
+        log.info("내 정보 조회 성공 - memberId: {}", memberId);
+        return MemberInfoResponse.of(member, equippedItemList);
     }
 
     //Member + SelfMember를 한 트랜잭션으로 저장 (중복 제약 위반 시 DataIntegrityViolationException 발생)
