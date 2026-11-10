@@ -113,9 +113,9 @@ public class AuthService {
             return memberService.createSelfMember(
                     request.loginId(),
                     passwordEncoder.encode(request.password()),
+                    request.name(),
                     request.nickname(),
-                    request.age(),
-                    request.gender());
+                    request.age());
         } catch (DataIntegrityViolationException e) {
             //사전 검사를 통과한 뒤 동시에 같은 값으로 가입한 경우: 어떤 값이 중복인지 다시 확인
             if (memberService.existsByLoginId(request.loginId())) {
@@ -130,7 +130,7 @@ public class AuthService {
 
     private Member createKakaoMember(String oauthId, SocialSignUpRequest request) {
         try {
-            return memberService.createKakaoMember(oauthId, request.nickname(), request.age(), request.gender());
+            return memberService.createKakaoMember(oauthId, request.name(), request.nickname(), request.age());
         } catch (DataIntegrityViolationException e) {
             //사전 검사를 통과한 뒤 동시에 가입한 경우: 어떤 값이 중복인지 다시 확인
             if (memberService.existsByOauthId(oauthId)) {

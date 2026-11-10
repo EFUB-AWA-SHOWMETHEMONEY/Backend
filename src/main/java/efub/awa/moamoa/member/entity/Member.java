@@ -3,7 +3,6 @@ package efub.awa.moamoa.member.entity;
 import efub.awa.moamoa.global.common.entity.BaseEntity;
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
-import efub.awa.moamoa.member.enums.Gender;
 import efub.awa.moamoa.member.enums.MemberType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,6 +27,9 @@ public class Member extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 20)
+    private String name;
+
     @Column(nullable = false, unique = true, length = 10)
     private String nickname;
 
@@ -41,21 +43,27 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Long capital;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
-    private Gender gender;
-
     @Column(nullable = false)
     private boolean alarm;
 
     @Builder
-    public Member(String nickname, Integer age, MemberType type, Long capital, Gender gender) {
+    public Member(String name, String nickname, Integer age, MemberType type, Long capital) {
+        this.name = name;
         this.nickname = nickname;
         this.age = age;
         this.type = type;
         this.capital = capital;
-        this.gender = gender;
         this.alarm = true;
+    }
+
+    //닉네임, 나이 부분 수정 (null인 항목은 수정하지 않음)
+    public void updateProfile(String nickname, Integer age) {
+        if (nickname != null) {
+            this.nickname = nickname;
+        }
+        if (age != null) {
+            this.age = age;
+        }
     }
 
     //Member의 withdraw/deposit의 파라미터는 항상 양수
