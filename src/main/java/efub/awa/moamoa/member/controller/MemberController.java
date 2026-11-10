@@ -3,6 +3,7 @@ package efub.awa.moamoa.member.controller;
 import efub.awa.moamoa.global.common.response.ApiResponse;
 import efub.awa.moamoa.member.dto.request.UpdateMemberRequest;
 import efub.awa.moamoa.member.dto.response.MemberInfoResponse;
+import efub.awa.moamoa.member.dto.response.MemberMoneyResponse;
 import efub.awa.moamoa.member.dto.response.NicknameCheckResponse;
 import efub.awa.moamoa.member.service.MemberService;
 import jakarta.validation.Valid;
@@ -33,6 +34,14 @@ public class MemberController {
 
         MemberInfoResponse response = memberService.getMyInfo(memberId);
         return ResponseEntity.ok(ApiResponse.success("내 정보 조회 요청이 성공했습니다.", response));
+    }
+
+    @GetMapping("/me/money")
+    public ResponseEntity<ApiResponse<MemberMoneyResponse>> getMyMoney(@AuthenticationPrincipal Long memberId) {
+        log.info("소유 금액 조회 API - memberId: {}", memberId);
+
+        MemberMoneyResponse response = memberService.getMyMoney(memberId);
+        return ResponseEntity.ok(ApiResponse.success("소유 금액 조회 요청이 성공했습니다.", response));
     }
 
     @PatchMapping("/me")
