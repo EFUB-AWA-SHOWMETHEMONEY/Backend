@@ -4,6 +4,8 @@ package efub.awa.moamoa.item.entity;
 import efub.awa.moamoa.global.common.entity.BaseEntity;
 import efub.awa.moamoa.member.entity.Member;
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,8 +25,10 @@ public class Inventory extends BaseEntity {
     @Column(name = "id")
     private Long id;
 
+    //회원 탈퇴 시 인벤토리 행은 유지하고 소유 회원만 null로 변경 (다른 회원의 거래·경매 기록에 아이템 정보가 남도록 함)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "member_id")
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
