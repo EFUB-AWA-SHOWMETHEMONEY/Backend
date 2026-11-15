@@ -40,8 +40,17 @@ public enum ErrorCode {
     //Attendance
     ALREADY_RECEIVED_REWARD(409, "이미 오늘의 보상을 받았습니다."),
 
+    //Websocet
+    INVALID_STOMP_DESTINATION(400, "잘못된 STOMP 도착지입니다"),
+
     //Plaza - 400
     NOT_IN_ROOM(400, "광장에 존재하지 않는 회원입니다."),
+
+    //Auction - 400
+    NOT_IN_AUCTION_ROOM(400, "경매에 존재하지 않는 회원입니다"),
+    AUCTION_NOT_FOUND(404, "존재하지 않는 경매입니다"),
+    ALREADY_STARTED(400, "이미 시작된 경매에는 새로 입장할 수 없습니다."),
+    ALREADY_ENDED(400, "이미 종료된 경매입니다."),
 
     //Item
     ITEM_NOT_FOUND(404, "존재하지 않는 아이템입니다."),
