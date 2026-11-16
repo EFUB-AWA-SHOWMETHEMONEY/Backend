@@ -4,6 +4,8 @@ import efub.awa.moamoa.bank.enums.AccountStatus;
 import efub.awa.moamoa.global.common.entity.BaseEntity;
 import efub.awa.moamoa.member.entity.Member;
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,7 +22,9 @@ public class BankAccount extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    //회원 탈퇴 시 함께 삭제
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 

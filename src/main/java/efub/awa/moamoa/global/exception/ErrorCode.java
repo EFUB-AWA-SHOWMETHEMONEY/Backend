@@ -37,6 +37,9 @@ public enum ErrorCode {
     //Member - 404
     MEMBER_NOT_FOUND(404, "존재하지 않는 회원입니다."),
 
+    //Member - 409
+    WITHDRAWAL_NOT_ALLOWED(409, "진행 중인 경매 또는 거래가 있어 탈퇴할 수 없습니다."),
+
     //Attendance
     ALREADY_RECEIVED_REWARD(409, "이미 오늘의 보상을 받았습니다."),
 

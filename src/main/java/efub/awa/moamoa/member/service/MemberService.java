@@ -15,6 +15,7 @@ import efub.awa.moamoa.member.entity.SelfMember;
 import efub.awa.moamoa.member.enums.MemberType;
 import efub.awa.moamoa.member.repository.KakaoMemberRepository;
 import efub.awa.moamoa.member.repository.MemberRepository;
+import efub.awa.moamoa.member.repository.MemberWithdrawalRepository;
 import efub.awa.moamoa.member.repository.SelfMemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ public class MemberService {
     private final SelfMemberRepository selfMemberRepository;
     private final KakaoMemberRepository kakaoMemberRepository;
     private final InventoryService inventoryService;
+    private final MemberWithdrawalRepository memberWithdrawalRepository;
 
     @Transactional(readOnly = true)
     public boolean existsByLoginId(String loginId) {
@@ -152,6 +154,28 @@ public class MemberService {
 
         log.info("닉네임 중복확인 성공 - nickname: {}, isDuplicated: {}", nickname, isDuplicated);
         return NicknameCheckResponse.of(isDuplicated);
+    }
+
+    //회원 삭제 (회원 본인 데이터는 DB의 ON DELETE CASCADE, 거래·경매 등 공유 기록은 ON DELETE SET NULL로 처리)
+    //회원 행을 잠가서 탈퇴 판단과 삭제 사이에 새 입찰·거래로 잔액이 바뀌지 않게 한다 (BalanceService와 같은 방식)
+    @Transactional
+    public void deleteMember(Long memberId) {
+        Member member = memberRepository.findByIdForUpdate(memberId)
+                .orElseThrow(() -> {
+                    log.warn("존재하지 않는 회원 - memberId: {}", memberId);
+                    return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+                });
+
+        if (memberWithdrawalRepository.existsInProgressAuction(memberId)
+                || memberWithdrawalRepository.existsInProgressTrade(memberId)) {
+            log.warn("진행 중인 경매 또는 거래가 있어 탈퇴 불가 - memberId: {}", memberId);
+            throw new CustomException(ErrorCode.WITHDRAWAL_NOT_ALLOWED);
+        }
+
+        memberRepository.delete(member);
+        memberRepository.flush();
+
+        log.info("회원 삭제 성공 - memberId: {}", memberId);
     }
 
     //Member + SelfMember를 한 트랜잭션으로 저장 (중복 제약 위반 시 DataIntegrityViolationException 발생)

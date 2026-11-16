@@ -5,6 +5,8 @@ import efub.awa.moamoa.item.entity.Inventory;
 import efub.awa.moamoa.member.entity.Member;
 import efub.awa.moamoa.trade.enums.TradeStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,12 +23,16 @@ public class Trade extends BaseEntity {
     @Column(name = "id")
     private Long id;
 
+    //회원 탈퇴 시 기록은 유지하고 회원 참조만 null로 변경 (다른 회원에게는 "탈퇴한 사용자"로 표시)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "seller_id")
     private Member seller;
 
+    //회원 탈퇴 시 기록은 유지하고 회원 참조만 null로 변경 (다른 회원에게는 "탈퇴한 사용자"로 표시)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "buyer_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "buyer_id")
     private Member buyer;
 
     @ManyToOne(fetch = FetchType.LAZY)
