@@ -1,5 +1,6 @@
 package efub.awa.moamoa.websocket.auction.repository;
 
+import efub.awa.moamoa.auction.service.AuctionParticipantChecker;
 import efub.awa.moamoa.websocket.auction.entity.AuctionParticipantState;
 import org.springframework.stereotype.Component;
 
@@ -10,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Component
-public class AuctionParticipantRegistry {
+public class AuctionParticipantRegistry implements AuctionParticipantChecker {
     private final Map<Long, Map<Long, AuctionParticipantState>> rooms = new ConcurrentHashMap<>();
 
     public AuctionParticipantState join (Long auctionId, AuctionParticipantState state) {
@@ -55,5 +56,10 @@ public class AuctionParticipantRegistry {
     public List<AuctionParticipantState> findAllByAuctionId(Long auctionId) {
         Map<Long, AuctionParticipantState> room = rooms.get(auctionId);
         return room == null ? List.of() : List.copyOf(room.values());
+    }
+
+    @Override
+    public boolean isParticipant(Long auctionId, Long memberId) {
+        return (find(auctionId, memberId) != null);
     }
 }

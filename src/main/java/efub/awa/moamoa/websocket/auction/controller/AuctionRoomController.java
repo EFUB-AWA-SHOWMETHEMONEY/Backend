@@ -23,6 +23,8 @@ public class AuctionRoomController {
     @GetMapping("/{auctionId}/participants")
     public ResponseEntity<ApiResponse<AuctionSnapshotResponse>> getSnapshot(@AuthenticationPrincipal Long memberId, @PathVariable("auctionId") Long auctionId) {
 
+        log.info("경매 스냅샷 조회 API 요청 - memberId: {}, auctionId: {}", memberId, auctionId);
+
         AuctionSnapshotResponse response = auctionRoomService.getSnapshot(memberId, auctionId);
         return ResponseEntity.ok(ApiResponse.success("경매방 참여자 조회 요청이 성공했습니다.", response));
     }

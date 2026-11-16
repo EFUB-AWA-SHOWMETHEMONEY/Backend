@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -22,7 +23,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "private_bid")
+@Table(name = "private_bid",
+    indexes = @Index(name = "idx_private_bid_active",
+    columnList = "auction_id, bidder_id, is_active"))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PrivateBid extends BaseEntity {
 
@@ -63,6 +66,13 @@ public class PrivateBid extends BaseEntity {
         this.commitHash = commitHash;
         this.committedAt = committedAt;
         this.verified = false;
-        this.active = false;
+        this.active = true;
+    }
+
+    public void invalidate() {this.active = false;}
+    public void reveal(Long amount, LocalDateTime now) {
+        this.revealedAmount = amount;
+        this.revealedAt = now;
+        this.verified = true;
     }
 }

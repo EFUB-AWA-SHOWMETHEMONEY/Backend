@@ -3,6 +3,7 @@ package efub.awa.moamoa.auction.entity;
 import efub.awa.moamoa.auction.enums.AuctionStatus;
 import efub.awa.moamoa.auction.enums.AuctionType;
 import efub.awa.moamoa.global.common.entity.BaseEntity;
+import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.item.entity.Inventory;
 import efub.awa.moamoa.member.entity.Member;
 import jakarta.persistence.Column;
@@ -25,6 +26,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+
+import static efub.awa.moamoa.global.exception.ErrorCode.INVALID_AUCTION_STATE;
+import static efub.awa.moamoa.global.exception.ErrorCode.NOT_PRIVATE_AUCTION;
 
 @Entity
 @Getter
@@ -94,5 +98,13 @@ public class Auction extends BaseEntity {
         this.revealDeadline = revealDeadline;
         this.status = AuctionStatus.READY;
         this.currentPrice = startPrice;
+    }
+
+    public void validatePrivate() {
+        if (this.type != AuctionType.PRIVATE) throw new CustomException(NOT_PRIVATE_AUCTION);
+    }
+
+    public void validateCommitPhase(LocalDateTime now) {
+        if (status != AuctionStatus.OPEN || commitDeadline == null || now.isAfter(commitDeadline)) throw new CustomException(INVALID_AUCTION_STATE);
     }
 }

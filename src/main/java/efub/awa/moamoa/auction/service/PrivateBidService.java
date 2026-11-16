@@ -1,0 +1,73 @@
+package efub.awa.moamoa.auction.service;
+
+import efub.awa.moamoa.auction.dto.request.PrivateBidCommitRequest;
+import efub.awa.moamoa.auction.dto.response.PrivateBidCommitResponse;
+import efub.awa.moamoa.auction.entity.Auction;
+import efub.awa.moamoa.auction.entity.PrivateBid;
+import efub.awa.moamoa.auction.repository.AuctionRepository;
+import efub.awa.moamoa.auction.repository.PrivateBidRepository;
+import efub.awa.moamoa.global.exception.CustomException;
+import efub.awa.moamoa.global.exception.ErrorCode;
+import efub.awa.moamoa.member.entity.Member;
+import efub.awa.moamoa.member.repository.MemberRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PrivateBidService {
+
+    private final AuctionParticipantChecker auctionParticipantChecker;
+    private final AuctionRepository auctionRepository;
+    private final PrivateBidRepository privateBidRepository;
+    private final MemberRepository memberRepository;
+
+    @Transactional
+    public PrivateBidCommitResponse commit(Long bidderId, Long auctionId, PrivateBidCommitRequest request) {
+        Member bidder = findByMemberId(bidderId);
+        Auction auction = findByAuctionId(auctionId);
+
+        auction.validatePrivate();
+        LocalDateTime now = LocalDateTime.now();
+        auction.validateCommitPhase(now);
+
+        if(!auctionParticipantChecker.isParticipant(auctionId, bidderId)) throw new CustomException(ErrorCode.NOT_AUCTION_PARTICIPANT);
+
+        boolean invalidated = privateBidRepository.findByAuctionIdAndBidderIdAndActiveTrue(auctionId, bidderId)
+                .map(prev -> {
+                    prev.invalidate();
+                    return true;})
+                .orElse(false);
+
+        PrivateBid saved = PrivateBid.builder()
+                .auction(auction)
+                .bidder(bidder)
+                .commitHash(request.commitHash())
+                .committedAt(now)
+                .build();
+        privateBidRepository.save(saved);
+
+        log.info("Private 경매 입찰 커밋 제출 성공 - bidderId:{}, auctionId:{}", bidderId, auction);
+        return PrivateBidCommitResponse.from(saved, invalidated);
+    }
+
+    private Member findByMemberId(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> {
+                    log.warn("존재하지 않는 회원: memberId-{}", memberId);
+                    return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+                });
+    }
+    private Auction findByAuctionId(Long auctionId) {
+        return auctionRepository.findByIdForUpdate(auctionId)
+                .orElseThrow(() -> {
+                    log.warn("존재하지 않는 경매: auctionId-{}", auctionId);
+                    return new CustomException(ErrorCode.AUCTION_NOT_FOUND);
+                });
+    }
+}

@@ -51,9 +51,12 @@ public enum ErrorCode {
 
     //Auction - 400
     NOT_IN_AUCTION_ROOM(400, "경매에 존재하지 않는 회원입니다"),
+    NOT_AUCTION_PARTICIPANT(403, "경매에 참여한 사용자만 커밋할 수 있습니다."),
     AUCTION_NOT_FOUND(404, "존재하지 않는 경매입니다"),
     ALREADY_STARTED(400, "이미 시작된 경매에는 새로 입장할 수 없습니다."),
     ALREADY_ENDED(400, "이미 종료된 경매입니다."),
+    NOT_PRIVATE_AUCTION(400, "PRIVATE 경매가 아닙니다."),
+    INVALID_AUCTION_STATE(400, "커밋 제출이 불가능한 경매 상태입니다."),
 
     //Item
     ITEM_NOT_FOUND(404, "존재하지 않는 아이템입니다."),
