@@ -53,6 +53,7 @@ public class AuctionRoomService {
             log.info("경매 중복 접속: memberId - {}, auctionId - {}, 이전 세션 - {}", memberId, auctionId, prev.sessionId());
         }
 
+        log.info("경매 웹소켓 입장 성공 - memberId: {}, auctionId: {}", memberId, auctionId);
         return state;
     }
 
@@ -64,6 +65,7 @@ public class AuctionRoomService {
         }
         String text = chatFilter.mask(request.text().trim());
 
+        log.info("경매 웹소켓 채팅 성공 - memberId: {}, auctionId: {}", memberId, auctionId);
         return AuctionEvent.AuctionChat.of(state, text);
     }
 
@@ -82,6 +84,7 @@ public class AuctionRoomService {
         List<AuctionParticipantResponse> participants = registry.findAllByAuctionId(auctionId)
                 .stream().map(AuctionParticipantResponse::from).toList();
 
+        log.info("경매 스냅샷 조회 API 요청 성공 - memberId: {}, auctionId: {}", memberId, auctionId);
         return AuctionSnapshotResponse.of(auction, auctionItem, participants, snapshotAt);
     }
 
