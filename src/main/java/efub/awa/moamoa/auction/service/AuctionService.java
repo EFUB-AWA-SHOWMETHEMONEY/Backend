@@ -1,8 +1,11 @@
 package efub.awa.moamoa.auction.service;
 
 import efub.awa.moamoa.auction.dto.request.CreateAuctionRequest;
+import efub.awa.moamoa.auction.dto.response.AuctionListResponse;
+import efub.awa.moamoa.auction.dto.response.AuctionSummaryResponse;
 import efub.awa.moamoa.auction.dto.response.CreateAuctionResponse;
 import efub.awa.moamoa.auction.entity.Auction;
+import efub.awa.moamoa.auction.enums.AuctionStatus;
 import efub.awa.moamoa.auction.policy.AuctionPolicy;
 import efub.awa.moamoa.auction.repository.AuctionRepository;
 import efub.awa.moamoa.global.exception.CustomException;
@@ -18,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -53,6 +57,19 @@ public class AuctionService {
         log.info("경매 생성 성공 - auctionId: {}, memberId: {}, inventoryId: {}, type: {}",
                 saved.getId(), memberId, inventory.getId(), saved.getType());
         return CreateAuctionResponse.from(saved);
+    }
+
+    //입장 가능한(READY) 경매와 진행 중인(OPEN) 경매를 입장 시작 시각 순으로 조회
+    @Transactional(readOnly = true)
+    public AuctionListResponse getAuctionList() {
+        List<AuctionSummaryResponse> auctions = auctionRepository
+                .findAllByStatusInWithItemAndOwner(List.of(AuctionStatus.READY, AuctionStatus.OPEN))
+                .stream()
+                .map(AuctionSummaryResponse::from)
+                .toList();
+
+        log.info("경매 목록 조회 성공 - totalCount: {}", auctions.size());
+        return AuctionListResponse.of(auctions, auctions.size());
     }
 
     private void validateReadyStartTime(LocalDateTime readyStartTime) {
