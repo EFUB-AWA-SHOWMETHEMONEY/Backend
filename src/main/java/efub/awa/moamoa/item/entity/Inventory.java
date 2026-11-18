@@ -2,6 +2,8 @@ package efub.awa.moamoa.item.entity;
 
 
 import efub.awa.moamoa.global.common.entity.BaseEntity;
+import efub.awa.moamoa.global.exception.CustomException;
+import efub.awa.moamoa.global.exception.ErrorCode;
 import efub.awa.moamoa.member.entity.Member;
 import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
@@ -55,4 +57,12 @@ public class Inventory extends BaseEntity {
     }
 
     public void increaseQuantity() { this.quantity += 1;}
+
+    //경매 등록 시 수량 1 차감 (수량이 0이 되어도 행은 삭제하지 않음: 경매/거래 기록이 이 행을 참조하기 때문)
+    public void decreaseQuantity() {
+        if (this.quantity <= 0) {
+            throw new CustomException(ErrorCode.INSUFFICIENT_ITEM_QUANTITY);
+        }
+        this.quantity -= 1;
+    }
 }

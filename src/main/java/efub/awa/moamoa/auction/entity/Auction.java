@@ -66,6 +66,14 @@ public class Auction extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime readyStartTime;
 
+    //입장 정원 (경매 생성 시 확정, 정원이 차면 READY에서 OPEN으로 바로 전환)
+    @Column(nullable = false)
+    private Integer maxParticipants;
+
+    //입장 대기 최대 마감 시각 (readyStartTime + 입장 대기 시간, 경매 생성 시 계산해서 저장)
+    @Column(nullable = false)
+    private LocalDateTime entryDeadline;
+
     private LocalDateTime openStartTime;
 
     @Column(nullable = false)
@@ -82,13 +90,15 @@ public class Auction extends BaseEntity {
 
     @Builder
     public Auction(Inventory inventory, Member auctionOwner, AuctionType type, Long startPrice,
-                   LocalDateTime readyStartTime, LocalDateTime openStartTime,
-                   LocalDateTime commitDeadline, LocalDateTime revealDeadline) {
+                   LocalDateTime readyStartTime, Integer maxParticipants, LocalDateTime entryDeadline,
+                   LocalDateTime openStartTime, LocalDateTime commitDeadline, LocalDateTime revealDeadline) {
         this.inventory = inventory;
         this.auctionOwner = auctionOwner;
         this.type = type;
         this.startPrice = startPrice;
         this.readyStartTime = readyStartTime;
+        this.maxParticipants = maxParticipants;
+        this.entryDeadline = entryDeadline;
         this.openStartTime = openStartTime;
         this.commitDeadline = commitDeadline;
         this.revealDeadline = revealDeadline;

@@ -54,6 +54,9 @@ public enum ErrorCode {
     AUCTION_NOT_FOUND(404, "존재하지 않는 경매입니다"),
     ALREADY_STARTED(400, "이미 시작된 경매에는 새로 입장할 수 없습니다."),
     ALREADY_ENDED(400, "이미 종료된 경매입니다."),
+    INVALID_READY_START_TIME(400, "경매 입장 시작 시각은 현재 시각 이후여야 합니다."),
+    ITEM_EQUIPPED(400, "장착 중인 아이템은 경매에 올릴 수 없습니다."),
+    INSUFFICIENT_ITEM_QUANTITY(400, "경매에 올릴 수 있는 수량이 없습니다."),
 
     //Item
     ITEM_NOT_FOUND(404, "존재하지 않는 아이템입니다."),
