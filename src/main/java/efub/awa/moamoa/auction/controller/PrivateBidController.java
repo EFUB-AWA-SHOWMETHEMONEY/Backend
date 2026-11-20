@@ -1,7 +1,9 @@
 package efub.awa.moamoa.auction.controller;
 
 import efub.awa.moamoa.auction.dto.request.PrivateBidCommitRequest;
+import efub.awa.moamoa.auction.dto.request.PrivateBidRevealRequest;
 import efub.awa.moamoa.auction.dto.response.PrivateBidCommitResponse;
+import efub.awa.moamoa.auction.dto.response.PrivateBidRevealResponse;
 import efub.awa.moamoa.auction.service.PrivateBidService;
 import efub.awa.moamoa.global.common.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -14,13 +16,13 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/auctions")
+@RequestMapping("/api/auctions/{auctionId}")
 @RequiredArgsConstructor
 public class PrivateBidController {
 
     private final PrivateBidService privateBidService;
 
-    @PostMapping("/{auctionId}/private/bids")
+    @PostMapping("/private/bids")
     public ResponseEntity<ApiResponse<PrivateBidCommitResponse>> privateBidCommit(@AuthenticationPrincipal Long memberId,
                                                                                   @PathVariable("auctionId") Long auctionId,
                                                                                   @Valid @RequestBody PrivateBidCommitRequest request) {
@@ -28,5 +30,15 @@ public class PrivateBidController {
         log.info("Private 경매 입찰 커밋 제출: memberId-{}, auctionId-{}", memberId, auctionId);
         PrivateBidCommitResponse response = privateBidService.commit(memberId, auctionId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("입찰 커밋 제출에 성공했습니다.", response));
+    }
+
+    @PostMapping("/private/bids/reveal")
+    public ResponseEntity<ApiResponse<PrivateBidRevealResponse>> privateBidReveal(@AuthenticationPrincipal Long memberId,
+                                                                                  @PathVariable("auctionId") Long auctionId,
+                                                                                  @Valid @RequestBody PrivateBidRevealRequest request) {
+
+        log.info("Private 경매 입찰 커밋 리빌 제출: memberId-{}, auctionId-{}", memberId, auctionId);
+        PrivateBidRevealResponse response = privateBidService.reveal(memberId, auctionId, request);
+        return ResponseEntity.ok(ApiResponse.success("입찰 금액 공개에 성공했습니다", response));
     }
 }
