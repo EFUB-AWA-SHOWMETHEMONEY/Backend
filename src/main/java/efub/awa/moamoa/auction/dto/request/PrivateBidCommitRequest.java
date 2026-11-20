@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Pattern;
 
 public record PrivateBidCommitRequest(
         @NotBlank
-        @Pattern(regexp = "^[0-9a-fA-F]{64}$")
+        @Pattern(regexp = "^[0-9a-f]{64}$")
         String commitHash
 ) {
 }

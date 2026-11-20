@@ -213,6 +213,20 @@ class PrivateBidServiceTest {
     // ---------- 참여자 검증 ----------
 
     @Test
+    @DisplayName("비참여자는 경매 상태·마감과 상관없이 먼저 NOT_AUCTION_PARTICIPANT(403)를 받는다")
+    void participantCheckedBeforeState() {
+        when(participantChecker.isParticipant(AUCTION, BIDDER)).thenReturn(false);
+
+        auction(AuctionType.PRIVATE, AuctionStatus.CLOSED, LocalDateTime.now().plusMinutes(10));
+        assertErrorCode(() -> service.commit(BIDDER, AUCTION, request()), ErrorCode.NOT_AUCTION_PARTICIPANT);
+
+        auction(AuctionType.PRIVATE, AuctionStatus.OPEN, LocalDateTime.now().minusSeconds(1));
+        assertErrorCode(() -> service.commit(BIDDER, AUCTION, request()), ErrorCode.NOT_AUCTION_PARTICIPANT);
+
+        verify(privateBidRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("경매 참여자가 아니면 NOT_AUCTION_PARTICIPANT(403)이고 저장·무효화되지 않는다")
     void notParticipant() {
         openPrivateAuction();

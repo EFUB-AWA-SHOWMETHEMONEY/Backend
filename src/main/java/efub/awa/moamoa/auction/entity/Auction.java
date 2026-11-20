@@ -27,8 +27,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-import static efub.awa.moamoa.global.exception.ErrorCode.INVALID_AUCTION_STATE;
-import static efub.awa.moamoa.global.exception.ErrorCode.NOT_PRIVATE_AUCTION;
+import static efub.awa.moamoa.global.exception.ErrorCode.*;
 
 @Entity
 @Getter
@@ -106,5 +105,10 @@ public class Auction extends BaseEntity {
 
     public void validateCommitPhase(LocalDateTime now) {
         if (status != AuctionStatus.OPEN || commitDeadline == null || now.isAfter(commitDeadline)) throw new CustomException(INVALID_AUCTION_STATE);
+    }
+
+    public void validateRevealPhase(LocalDateTime now) {
+        if (status != AuctionStatus.OPEN || commitDeadline == null || revealDeadline == null) throw new CustomException(INVALID_REVEAL_STATE);
+        if (!now.isAfter(commitDeadline) || now.isAfter(revealDeadline)) throw new CustomException(INVALID_REVEAL_STATE);
     }
 }
