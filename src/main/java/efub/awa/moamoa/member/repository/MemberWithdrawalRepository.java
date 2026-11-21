@@ -37,12 +37,12 @@ public class MemberWithdrawalRepository {
                 """, memberId, IN_PROGRESS_AUCTION_STATUSES);
     }
 
-    //판매자 또는 구매자로 참여 중인 진행 중 거래가 있는지
+    //거래방 참여자로 참여 중인 진행 중 거래가 있는지
     public boolean existsInProgressTrade(Long memberId) {
         return exists("""
                 select t.id from Trade t
                 where t.status in :statuses
-                    and (t.seller.id = :memberId or t.buyer.id = :memberId)
+                    and (t.participant1.id = :memberId or t.participant2.id = :memberId)
                 """, memberId, IN_PROGRESS_TRADE_STATUSES);
     }
 

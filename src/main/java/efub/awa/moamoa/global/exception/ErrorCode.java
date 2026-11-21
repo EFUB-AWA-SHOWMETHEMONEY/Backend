@@ -62,6 +62,8 @@ public enum ErrorCode {
     ALREADY_REVEALED(409, "이미 공개한 입찰입니다."),
     COMMIT_HASH_MISMATCH(400, "제출한 금액이 커밋 해시와 일치하지 않습니다."),
 
+    //Trade
+    SELF_TRADE_NOT_ALLOWED(400, "본인에게는 거래를 요청할 수 없습니다."),
 
     //Item
     ITEM_NOT_FOUND(404, "존재하지 않는 아이템입니다."),
