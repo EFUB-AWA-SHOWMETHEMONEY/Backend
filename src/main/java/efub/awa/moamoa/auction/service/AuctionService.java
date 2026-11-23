@@ -28,15 +28,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuctionService {
-
-    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     private final AuctionRepository auctionRepository;
     private final MemberRepository memberRepository;
@@ -140,7 +137,7 @@ public class AuctionService {
     }
 
     private void validateReadyStartTime(LocalDateTime readyStartTime) {
-        if (!readyStartTime.isAfter(LocalDateTime.now(KST))) {
+        if (!readyStartTime.isAfter(LocalDateTime.now())) {
             log.warn("현재 시각 이전의 경매 입장 시작 시각 - readyStartTime: {}", readyStartTime);
             throw new CustomException(ErrorCode.INVALID_READY_START_TIME);
         }

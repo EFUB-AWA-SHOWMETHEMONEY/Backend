@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 
 //경매 상태 전환 (외부에 공개하는 REST 엔드포인트 없음: 입장 처리(정원 도달 시)와 스케줄러가 직접 호출한다)
@@ -34,8 +33,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class AuctionTransitionService {
-
-    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     private final AuctionRepository auctionRepository;
     private final PublicBidRepository publicBidRepository;
@@ -54,7 +51,7 @@ public class AuctionTransitionService {
                     log.warn("존재하지 않는 경매 전환 시도 - auctionId: {}", auctionId);
                     return new CustomException(ErrorCode.AUCTION_NOT_FOUND);
                 });
-        LocalDateTime now = LocalDateTime.now(KST);
+        LocalDateTime now = LocalDateTime.now();
 
         return switch (auction.getStatus()) {
             case READY -> transitionFromReady(auction, now);

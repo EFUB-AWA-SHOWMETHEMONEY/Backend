@@ -30,7 +30,6 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -50,7 +49,6 @@ import static org.mockito.Mockito.when;
 
 class AuctionTransitionServiceTest {
 
-    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     private static final long AUCTION = 10L;
     private static final long SELLER = 1L;
     private static final long WINNER = 2L;
@@ -96,7 +94,7 @@ class AuctionTransitionServiceTest {
 
     //READY 경매를 만든다. entryDeadline은 현재 시각 기준 offset(분) 이후 (음수면 이미 지난 상태)
     private Auction readyAuction(AuctionType type, long entryDeadlineOffsetMinutes) {
-        LocalDateTime now = LocalDateTime.now(KST);
+        LocalDateTime now = LocalDateTime.now();
         Inventory inventory = mock(Inventory.class);
         when(inventory.getId()).thenReturn(INVENTORY);
         when(inventory.getItem()).thenReturn(item);
@@ -118,7 +116,7 @@ class AuctionTransitionServiceTest {
     //OPEN 경매를 만든다. commitDeadline은 현재 시각 기준 offset(분) 이후, PRIVATE이면 리빌 마감은 commitDeadline + 3분
     private Auction openAuction(AuctionType type, long commitDeadlineOffsetMinutes) {
         Auction auction = readyAuction(type, -5);
-        LocalDateTime commitDeadline = LocalDateTime.now(KST).plusMinutes(commitDeadlineOffsetMinutes);
+        LocalDateTime commitDeadline = LocalDateTime.now().plusMinutes(commitDeadlineOffsetMinutes);
         ReflectionTestUtils.setField(auction, "status", AuctionStatus.OPEN);
         ReflectionTestUtils.setField(auction, "openStartTime", commitDeadline.minusMinutes(10));
         ReflectionTestUtils.setField(auction, "commitDeadline", commitDeadline);
@@ -318,7 +316,7 @@ class AuctionTransitionServiceTest {
         Auction auction = openAuction(AuctionType.PUBLIC, 5);
         withBidder(auction);
         when(publicBidRepository.findLastBidTime(AUCTION))
-                .thenReturn(Optional.of(LocalDateTime.now(KST).minusSeconds(31)));
+                .thenReturn(Optional.of(LocalDateTime.now().minusSeconds(31)));
 
         AuctionTransitionResult result = service.transition(AUCTION);
 
@@ -332,7 +330,7 @@ class AuctionTransitionServiceTest {
         Auction auction = openAuction(AuctionType.PUBLIC, 5);
         withBidder(auction);
         when(publicBidRepository.findLastBidTime(AUCTION))
-                .thenReturn(Optional.of(LocalDateTime.now(KST).minusSeconds(10)));
+                .thenReturn(Optional.of(LocalDateTime.now().minusSeconds(10)));
 
         assertErrorCode(() -> service.transition(AUCTION), ErrorCode.AUCTION_CONDITION_NOT_MET);
         assertThat(auction.getStatus()).isEqualTo(AuctionStatus.OPEN);
