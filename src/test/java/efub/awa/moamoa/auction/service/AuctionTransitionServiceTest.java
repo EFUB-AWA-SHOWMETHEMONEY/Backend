@@ -5,6 +5,7 @@ import efub.awa.moamoa.auction.entity.Auction;
 import efub.awa.moamoa.auction.enums.AuctionStatus;
 import efub.awa.moamoa.auction.enums.AuctionType;
 import efub.awa.moamoa.auction.event.AuctionClosedEvent;
+import efub.awa.moamoa.auction.repository.AuctionEntryListRepository;
 import efub.awa.moamoa.auction.repository.AuctionRepository;
 import efub.awa.moamoa.auction.repository.PublicBidRepository;
 import efub.awa.moamoa.balance.enums.BalanceChangeType;
@@ -24,17 +25,22 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -57,6 +63,7 @@ class AuctionTransitionServiceTest {
     private BalanceService balanceService;
     private InventoryService inventoryService;
     private ApplicationEventPublisher eventPublisher;
+    private AuctionEntryListRepository entryListRepository;
     private AuctionTransitionService service;
 
     private Member seller;
@@ -71,8 +78,9 @@ class AuctionTransitionServiceTest {
         balanceService = mock(BalanceService.class);
         inventoryService = mock(InventoryService.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
+        entryListRepository = mock(AuctionEntryListRepository.class);
         service = new AuctionTransitionService(auctionRepository, publicBidRepository, registry,
-                balanceService, inventoryService, eventPublisher);
+                balanceService, inventoryService, eventPublisher, entryListRepository);
 
         seller = mock(Member.class);
         when(seller.getId()).thenReturn(SELLER);
@@ -142,6 +150,7 @@ class AuctionTransitionServiceTest {
         verify(auctionRepository, never()).saveAndFlush(any());
         verifyNoInteractions(balanceService);
         verifyNoInteractions(eventPublisher);
+        verifyNoInteractions(entryListRepository);
         verify(inventoryService, never()).restoreForAuction(any());
         verify(inventoryService, never()).grantAuctionItem(any(), any());
     }
@@ -384,5 +393,44 @@ class AuctionTransitionServiceTest {
         assertThatThrownBy(() -> service.transition(AUCTION)).isInstanceOf(UnsupportedOperationException.class);
         assertThat(auction.getStatus()).isEqualTo(AuctionStatus.OPEN);
         assertNothingHappened();
+    }
+
+    // ---------- OPEN 전환 시 참가자 명단 ----------
+
+    @Test
+    @DisplayName("READY -> OPEN: 그 순간 방에 있던 회원을 참가자 명단으로 저장한다")
+    @SuppressWarnings("unchecked")
+    void openSavesParticipantList() {
+        readyAuction(AuctionType.PUBLIC, -1);
+        fillRoom(6);
+
+        service.transition(AUCTION);
+
+        ArgumentCaptor<Collection<Long>> captor = ArgumentCaptor.forClass(Collection.class);
+        verify(entryListRepository).saveParticipants(eq(AUCTION), captor.capture());
+        assertThat(captor.getValue()).containsExactlyInAnyOrder(1L, 2L, 3L, 4L, 5L, 6L);
+    }
+
+    @Test
+    @DisplayName("READY -> FAILED는 참가자 명단을 저장하지 않는다")
+    void failDoesNotSaveParticipantList() {
+        readyAuction(AuctionType.PUBLIC, -1);
+        fillRoom(4);
+
+        service.transition(AUCTION);
+
+        verifyNoInteractions(entryListRepository);
+    }
+
+    @Test
+    @DisplayName("참가자 명단 저장에 실패하면 예외가 전파되어 OPEN 전환이 롤백된다")
+    void participantListFailurePropagates() {
+        readyAuction(AuctionType.PUBLIC, 5);
+        fillRoom(20);
+        doThrow(new RedisConnectionFailureException("redis down"))
+                .when(entryListRepository).saveParticipants(anyLong(), any());
+
+        assertThatThrownBy(() -> service.transition(AUCTION)).isInstanceOf(RedisConnectionFailureException.class);
+        verifyNoInteractions(eventPublisher);
     }
 }

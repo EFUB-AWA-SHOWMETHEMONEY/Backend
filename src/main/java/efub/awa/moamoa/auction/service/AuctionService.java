@@ -4,6 +4,7 @@ import efub.awa.moamoa.auction.dto.request.CreateAuctionRequest;
 import efub.awa.moamoa.auction.dto.response.AuctionListResponse;
 import efub.awa.moamoa.auction.dto.response.AuctionSummaryResponse;
 import efub.awa.moamoa.auction.dto.response.CreateAuctionResponse;
+import efub.awa.moamoa.auction.dto.response.JoinAuctionResponse;
 import efub.awa.moamoa.auction.entity.Auction;
 import efub.awa.moamoa.auction.enums.AuctionStatus;
 import efub.awa.moamoa.auction.policy.AuctionPolicy;
@@ -14,6 +15,8 @@ import efub.awa.moamoa.item.entity.Inventory;
 import efub.awa.moamoa.item.service.InventoryService;
 import efub.awa.moamoa.member.entity.Member;
 import efub.awa.moamoa.member.repository.MemberRepository;
+import efub.awa.moamoa.websocket.auction.repository.AuctionParticipantRegistry;
+import efub.awa.moamoa.websocket.auction.service.AuctionRoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,8 @@ public class AuctionService {
     private final AuctionRepository auctionRepository;
     private final MemberRepository memberRepository;
     private final InventoryService inventoryService;
+    private final AuctionRoomService auctionRoomService;
+    private final AuctionParticipantRegistry participantRegistry;
 
     @Transactional
     public CreateAuctionResponse createAuction(Long memberId, CreateAuctionRequest request) {
@@ -72,6 +77,19 @@ public class AuctionService {
         return AuctionListResponse.of(auctions, auctions.size());
     }
 
+    //입장 가능 여부만 검증하고 방 정보를 돌려준다. 실제 입장(참가자 등록, user_joined)은 구독 시점에 일어나며 같은 검증을 쓴다.
+    @Transactional(readOnly = true)
+    public JoinAuctionResponse joinAuction(Long memberId, Long auctionId) {
+        Auction auction = getAuction(auctionId);
+        auctionRoomService.validateJoinable(auction, memberId);
+
+        int currentParticipants = participantRegistry.count(auctionId);
+
+        log.info("경매 입장 검증 성공 - auctionId: {}, memberId: {}, status: {}, 현재 인원: {}",
+                auctionId, memberId, auction.getStatus(), currentParticipants);
+        return JoinAuctionResponse.of(auction, currentParticipants);
+    }
+
     private void validateReadyStartTime(LocalDateTime readyStartTime) {
         if (!readyStartTime.isAfter(LocalDateTime.now(KST))) {
             log.warn("현재 시각 이전의 경매 입장 시작 시각 - readyStartTime: {}", readyStartTime);
@@ -84,6 +102,14 @@ public class AuctionService {
                 .orElseThrow(() -> {
                     log.warn("존재하지 않는 회원 - memberId: {}", memberId);
                     return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+                });
+    }
+
+    private Auction getAuction(Long auctionId) {
+        return auctionRepository.findById(auctionId)
+                .orElseThrow(() -> {
+                    log.warn("존재하지 않는 경매 - auctionId: {}", auctionId);
+                    return new CustomException(ErrorCode.AUCTION_NOT_FOUND);
                 });
     }
 }

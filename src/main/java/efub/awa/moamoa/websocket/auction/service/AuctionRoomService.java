@@ -1,6 +1,8 @@
 package efub.awa.moamoa.websocket.auction.service;
 
 import efub.awa.moamoa.auction.entity.Auction;
+import efub.awa.moamoa.auction.enums.AuctionStatus;
+import efub.awa.moamoa.auction.repository.AuctionEntryListRepository;
 import efub.awa.moamoa.auction.repository.AuctionRepository;
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
@@ -21,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -33,6 +36,8 @@ public class AuctionRoomService {
     private final InventoryService inventoryService;
     private final ChatFilter chatFilter;
     private final AuctionRepository auctionRepository;
+    //[변경 내용] OPEN 이후 입장 판단에 쓰는 참가자 명단/퇴장 명단(Redis) 저장소를 추가했다. (아래 validateJoinable 참고)
+    private final AuctionEntryListRepository entryListRepository;
 
     @Transactional(readOnly = true)
     public AuctionParticipantState join(Long auctionId, Long memberId, String sessionId) {
@@ -88,6 +93,13 @@ public class AuctionRoomService {
         return AuctionSnapshotResponse.of(auction, auctionItem, participants, snapshotAt);
     }
 
+    //[변경 내용] 입장 검증을 경매 입장 명세서의 검사 순서대로 확장했다.
+    //  종료 확인 -> 판매자 본인 차단(SELLER_CANNOT_JOIN) -> 이미 방에 있으면 통과(멱등)
+    //  -> READY: 입장 시작 전(ENTRY_NOT_STARTED), 정원 초과(ROOM_FULL)
+    //  -> OPEN: 참가자 명단에 없으면 ALREADY_STARTED, PUBLIC 퇴장 명단에 있으면 REENTRY_NOT_ALLOWED, 그 외는 재접속 허용
+    //  REST 입장 API(AuctionService.joinAuction)도 같은 검증을 쓰도록 Auction을 받는 메서드를 추가했다.
+    //[변경 이유] 기존에는 READY면 항상 입장할 수 있었고, OPEN 중 연결이 끊긴 참가자는 다시 들어올 수 없었다.
+    //            정원/판매자/입장 시작 시각 검사를 넣고, 웹소켓 컨트랙트의 재연결 규칙에 맞춰 OPEN 참가자의 재접속을 허용한다.
     @Transactional(readOnly = true)
     public void validateJoinable(Long auctionId, Long memberId) {
         Auction auction = auctionRepository.findById(auctionId)
@@ -95,15 +107,48 @@ public class AuctionRoomService {
                     log.warn("존재하지 않는 경매 접속: auctionId - {}", auctionId);
                     return new CustomException(ErrorCode.AUCTION_NOT_FOUND);
                 });
+        validateJoinable(auction, memberId);
+    }
 
-        switch(auction.getStatus()) {
-            case READY -> {}
-            case CLOSED, FAILED -> throw new CustomException(ErrorCode.ALREADY_ENDED);
-            case OPEN -> {
-                if (registry.find(auctionId, memberId) != null) return;
-                throw new CustomException(ErrorCode.ALREADY_STARTED);
-            }
+    public void validateJoinable(Auction auction, Long memberId) {
+        Long auctionId = auction.getId();
+        AuctionStatus status = auction.getStatus();
+
+        if (status == AuctionStatus.CLOSED || status == AuctionStatus.FAILED) {
+            throw new CustomException(ErrorCode.ALREADY_ENDED);
         }
+        if (isSeller(auction, memberId)) {
+            log.warn("판매자 본인 경매 입장 시도: memberId - {}, auctionId - {}", memberId, auctionId);
+            throw new CustomException(ErrorCode.SELLER_CANNOT_JOIN);
+        }
+        //이미 방에 있으면(다른 탭 재구독, 입장 API 재호출) 정원과 상관없이 통과
+        if (registry.find(auctionId, memberId) != null) return;
+
+        if (status == AuctionStatus.READY) {
+            if (LocalDateTime.now().isBefore(auction.getReadyStartTime())) {
+                throw new CustomException(ErrorCode.ENTRY_NOT_STARTED);
+            }
+            //정원이 차면 스케줄러가 곧 OPEN으로 전환한다. 전환 전까지 들어오는 입장은 막는다.
+            if (registry.count(auctionId) >= auction.getMaxParticipants()) {
+                throw new CustomException(ErrorCode.ROOM_FULL);
+            }
+            return;
+        }
+
+        //OPEN: 시작 순간 방에 있던 사람만 다시 들어올 수 있다. (연결이 끊긴 참가자의 재접속)
+        if (!entryListRepository.isInParticipantList(auctionId, memberId)) {
+            throw new CustomException(ErrorCode.ALREADY_STARTED);
+        }
+        //PUBLIC은 시작 후 퇴장 버튼으로 나가면 다시 들어올 수 없다. (퇴장 명단에는 PUBLIC 퇴장만 기록된다)
+        if (entryListRepository.isInLeftList(auctionId, memberId)) {
+            throw new CustomException(ErrorCode.REENTRY_NOT_ALLOWED);
+        }
+    }
+
+    //판매자가 탈퇴하면 경매 등록자가 null이 될 수 있다.
+    private boolean isSeller(Auction auction, Long memberId) {
+        Member owner = auction.getAuctionOwner();
+        return owner != null && owner.getId().equals(memberId);
     }
 
     private Member findMemberById(Long memberId) {

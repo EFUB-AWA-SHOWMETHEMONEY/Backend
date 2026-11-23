@@ -66,6 +66,10 @@ public enum ErrorCode {
     ITEM_EQUIPPED(400, "장착 중인 아이템은 경매에 올릴 수 없습니다."),
     INSUFFICIENT_ITEM_QUANTITY(400, "경매에 올릴 수 있는 수량이 없습니다."),
     AUCTION_CONDITION_NOT_MET(409, "아직 전환 조건을 만족하지 않았습니다."),
+    ENTRY_NOT_STARTED(400, "아직 입장 시간이 아닙니다."),
+    SELLER_CANNOT_JOIN(400, "본인이 등록한 경매에는 입장할 수 없습니다."),
+    ROOM_FULL(409, "정원이 가득 찼습니다."),
+    REENTRY_NOT_ALLOWED(409, "PUBLIC 경매는 시작 후 퇴장하면 다시 입장할 수 없습니다."),
 
     //Item
     ITEM_NOT_FOUND(404, "존재하지 않는 아이템입니다."),

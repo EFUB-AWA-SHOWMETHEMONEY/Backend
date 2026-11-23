@@ -5,6 +5,7 @@ import efub.awa.moamoa.auction.entity.Auction;
 import efub.awa.moamoa.auction.enums.AuctionType;
 import efub.awa.moamoa.auction.event.AuctionClosedEvent;
 import efub.awa.moamoa.auction.policy.AuctionPolicy;
+import efub.awa.moamoa.auction.repository.AuctionEntryListRepository;
 import efub.awa.moamoa.auction.repository.AuctionRepository;
 import efub.awa.moamoa.auction.repository.PublicBidRepository;
 import efub.awa.moamoa.balance.enums.BalanceChangeType;
@@ -14,6 +15,7 @@ import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
 import efub.awa.moamoa.item.service.InventoryService;
 import efub.awa.moamoa.member.entity.Member;
+import efub.awa.moamoa.websocket.auction.entity.AuctionParticipantState;
 import efub.awa.moamoa.websocket.auction.repository.AuctionParticipantRegistry;
 import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 //경매 상태 전환 (외부에 공개하는 REST 엔드포인트 없음: 입장 처리(정원 도달 시)와 스케줄러가 직접 호출한다)
 @Slf4j
@@ -40,6 +43,7 @@ public class AuctionTransitionService {
     private final BalanceService balanceService;
     private final InventoryService inventoryService;
     private final ApplicationEventPublisher eventPublisher;
+    private final AuctionEntryListRepository entryListRepository;
 
     //현재 상태, 시각, 참가 인원을 조회해서 전환할 수 있으면 한 단계만 전환한다.
     //전환 조건을 만족하지 않으면 AUCTION_CONDITION_NOT_MET
@@ -72,6 +76,7 @@ public class AuctionTransitionService {
         if (full || (entryClosed && participantCount >= AuctionPolicy.MIN_PARTICIPANTS)) {
             auction.open(now);
             saveAndFlush(auction);
+            saveParticipantList(auction.getId());
 
             log.info("경매 시작 - auctionId: {}, 참가 인원: {}", auction.getId(), participantCount);
             return AuctionTransitionResult.of(auction, null, null);
@@ -146,6 +151,15 @@ public class AuctionTransitionService {
         }
         throw new UnsupportedOperationException(
                 "PRIVATE 경매 마감 처리는 아직 지원하지 않습니다. auctionId=" + auction.getId());
+    }
+
+    //OPEN 이후 재접속 판단을 위해 시작 순간 방에 있던 회원을 참가자 명단(Redis)으로 저장한다.
+    //저장에 실패하면 예외로 OPEN 전환 전체가 롤백되고, 다음 주기에 다시 시도한다.
+    private void saveParticipantList(Long auctionId) {
+        List<Long> memberIds = participantRegistry.findAllByAuctionId(auctionId).stream()
+                .map(AuctionParticipantState::memberId)
+                .toList();
+        entryListRepository.saveParticipants(auctionId, memberIds);
     }
 
     //FAILED 처리: 판매자에게 아이템을 돌려주고 종료 이벤트를 발행한다. (winnerId가 null이면 유찰)

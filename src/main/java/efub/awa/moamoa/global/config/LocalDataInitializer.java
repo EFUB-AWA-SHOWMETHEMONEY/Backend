@@ -38,7 +38,9 @@ public class LocalDataInitializer implements CommandLineRunner {
     private static final long TEST_CAPITAL = 100000L;
 
     //memberId를 키에 포함하는 Redis 데이터 (DB 재생성 시 다른 회원을 가리키게 되므로 함께 비운다)
-    private static final List<String> MEMBER_SCOPED_KEY_PATTERNS = List.of("refresh:*", "attendance:*");
+    //[변경 내용] 경매 입장 명단(auction:participants:*, auction:left:*)을 정리 대상에 추가했다.
+    //[변경 이유] 경매 id도 DB 재생성 시 1부터 다시 시작해서, 이전 실행의 명단이 남아 있으면 새 경매의 입장 판단이 꼬인다.
+    private static final List<String> MEMBER_SCOPED_KEY_PATTERNS = List.of("refresh:*", "attendance:*", "auction:*");
 
     private final MemberRepository memberRepository;
     private final ItemRepository itemRepository;
