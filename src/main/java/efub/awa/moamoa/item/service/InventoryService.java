@@ -8,6 +8,7 @@ import efub.awa.moamoa.item.entity.Inventory;
 import efub.awa.moamoa.item.entity.Item;
 import efub.awa.moamoa.item.event.ItemEquipmentChangeEvent;
 import efub.awa.moamoa.item.repository.InventoryRepository;
+import efub.awa.moamoa.member.entity.Member;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -89,6 +90,35 @@ public class InventoryService {
 
         inventory.decreaseQuantity();
         return inventory;
+    }
+
+    //[변경 내용] 경매 종료 시 인벤토리 수량을 +1 하는 메서드 2개를 추가했다.
+    //  - restoreForAuction: 경매가 유찰(FAILED)되면 판매자에게 아이템을 돌려준다. (경매 등록 때 차감한 수량 +1)
+    //  - grantAuctionItem: 경매가 낙찰(CLOSED)되면 낙찰자에게 아이템을 지급한다. 해당 아이템 행이 없으면 새로 만든다.
+    //[변경 이유] 경매 상태 전환(AuctionTransitionService)이 다른 도메인의 Repository를 직접 쓰지 않고 이 서비스를 통해
+    //            수량을 바꾸도록 하기 위해서다. 상점 구매 등과 동시에 같은 행을 바꿔도 덮어써지지 않도록 행을 잠그고 조회한다.
+    //            기존 메서드는 수정하지 않았다.
+    @Transactional
+    public void restoreForAuction(Long inventoryId) {
+        Inventory inventory = inventoryRepository.findByIdForUpdate(inventoryId)
+                .orElseThrow(() -> {
+                    log.warn("존재하지 않는 인벤토리 아이템 - inventoryId: {}", inventoryId);
+                    return new CustomException(ErrorCode.INVENTORY_NOT_FOUND);
+                });
+        inventory.increaseQuantity();
+    }
+
+    @Transactional
+    public void grantAuctionItem(Member winner, Item item) {
+        inventoryRepository.findByMemberIdAndItemIdForUpdate(winner.getId(), item.getId())
+                .ifPresentOrElse(
+                        Inventory::increaseQuantity,
+                        () -> inventoryRepository.save(Inventory.builder()
+                                .member(winner)
+                                .item(item)
+                                .quantity(1L)
+                                .isEquipped(false)
+                                .build()));
     }
 
     public List<Inventory> findEquippedInventory(Long memberId) {

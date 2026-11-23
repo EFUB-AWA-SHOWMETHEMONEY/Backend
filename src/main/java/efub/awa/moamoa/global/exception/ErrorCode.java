@@ -57,6 +57,7 @@ public enum ErrorCode {
     INVALID_READY_START_TIME(400, "경매 입장 시작 시각은 현재 시각 이후여야 합니다."),
     ITEM_EQUIPPED(400, "장착 중인 아이템은 경매에 올릴 수 없습니다."),
     INSUFFICIENT_ITEM_QUANTITY(400, "경매에 올릴 수 있는 수량이 없습니다."),
+    AUCTION_CONDITION_NOT_MET(409, "아직 전환 조건을 만족하지 않았습니다."),
 
     //Item
     ITEM_NOT_FOUND(404, "존재하지 않는 아이템입니다."),

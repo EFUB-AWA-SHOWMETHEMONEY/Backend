@@ -2,6 +2,7 @@ package efub.awa.moamoa.auction.entity;
 
 import efub.awa.moamoa.auction.enums.AuctionStatus;
 import efub.awa.moamoa.auction.enums.AuctionType;
+import efub.awa.moamoa.auction.policy.AuctionPolicy;
 import efub.awa.moamoa.global.common.entity.BaseEntity;
 import efub.awa.moamoa.item.entity.Inventory;
 import efub.awa.moamoa.member.entity.Member;
@@ -104,5 +105,26 @@ public class Auction extends BaseEntity {
         this.revealDeadline = revealDeadline;
         this.status = AuctionStatus.READY;
         this.currentPrice = startPrice;
+    }
+
+    //READY -> OPEN: 시작 시각과 마감 시각을 계산한다. (입찰/커밋 10분, PRIVATE은 리빌 3분을 추가)
+    public void open(LocalDateTime now) {
+        this.status = AuctionStatus.OPEN;
+        this.openStartTime = now;
+        this.commitDeadline = now.plusMinutes(AuctionPolicy.COMMIT_MINUTES);
+        if (this.type == AuctionType.PRIVATE) {
+            this.revealDeadline = this.commitDeadline.plusMinutes(AuctionPolicy.REVEAL_MINUTES);
+        }
+    }
+
+    //READY/OPEN -> FAILED: 인원 미달 또는 유효 낙찰자 없음
+    public void fail() {
+        this.status = AuctionStatus.FAILED;
+    }
+
+    //OPEN -> CLOSED (PUBLIC): 현재가가 낙찰가이고 현재 최고 입찰자(currentBidder)가 낙찰자이다.
+    public void close() {
+        this.status = AuctionStatus.CLOSED;
+        this.finalPrice = this.currentPrice;
     }
 }
