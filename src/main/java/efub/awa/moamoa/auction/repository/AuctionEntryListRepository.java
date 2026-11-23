@@ -31,6 +31,17 @@ public class AuctionEntryListRepository {
         redisTemplate.expire(key, TTL);
     }
 
+    //퇴장 명단에 추가한다. 만료 시간은 처음 기록할 때만 건다. (이후 퇴장이 만료를 늘리지 않도록)
+    public void addLeft(Long auctionId, Long memberId) {
+        String key = leftKey(auctionId);
+        redisTemplate.opsForSet().add(key, String.valueOf(memberId));
+
+        Long ttl = redisTemplate.getExpire(key);
+        if (ttl == null || ttl < 0) {
+            redisTemplate.expire(key, TTL);
+        }
+    }
+
     public boolean isInParticipantList(Long auctionId, Long memberId) {
         return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(participantsKey(auctionId), String.valueOf(memberId)));
     }

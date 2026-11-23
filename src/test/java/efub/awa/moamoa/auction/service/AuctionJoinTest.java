@@ -19,6 +19,7 @@ import efub.awa.moamoa.websocket.plaza.support.ChatFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
@@ -55,7 +56,7 @@ class AuctionJoinTest {
         AuctionRoomService roomService = new AuctionRoomService(registry, memberRepository, inventoryService,
                 new ChatFilter(), auctionRepository, entryListRepository);
         auctionService = new AuctionService(auctionRepository, memberRepository, inventoryService,
-                roomService, registry);
+                roomService, registry, entryListRepository, mock(SimpMessagingTemplate.class));
 
         seller = mock(Member.class);
         when(seller.getId()).thenReturn(SELLER);

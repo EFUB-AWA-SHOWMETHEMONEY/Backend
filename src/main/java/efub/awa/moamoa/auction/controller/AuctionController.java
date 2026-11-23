@@ -52,4 +52,12 @@ public class AuctionController {
         JoinAuctionResponse response = auctionService.joinAuction(memberId, auctionId);
         return ResponseEntity.ok(ApiResponse.success("경매 입장 요청이 성공했습니다.", response));
     }
+
+    @PostMapping("/{auctionId}/leave")
+    public ResponseEntity<ApiResponse<Void>> leaveAuction(@AuthenticationPrincipal Long memberId,
+                                                          @PathVariable("auctionId") Long auctionId) {
+        log.info("경매 퇴장 API - memberId: {}, auctionId: {}", memberId, auctionId);
+        auctionService.leaveAuction(memberId, auctionId);
+        return ResponseEntity.ok(ApiResponse.success("경매 퇴장 요청이 성공했습니다."));
+    }
 }

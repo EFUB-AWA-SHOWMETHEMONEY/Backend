@@ -70,6 +70,7 @@ public enum ErrorCode {
     SELLER_CANNOT_JOIN(400, "본인이 등록한 경매에는 입장할 수 없습니다."),
     ROOM_FULL(409, "정원이 가득 찼습니다."),
     REENTRY_NOT_ALLOWED(409, "PUBLIC 경매는 시작 후 퇴장하면 다시 입장할 수 없습니다."),
+    ALREADY_LEFT(409, "이미 경매에서 퇴장하셨습니다."),
 
     //Item
     ITEM_NOT_FOUND(404, "존재하지 않는 아이템입니다."),
