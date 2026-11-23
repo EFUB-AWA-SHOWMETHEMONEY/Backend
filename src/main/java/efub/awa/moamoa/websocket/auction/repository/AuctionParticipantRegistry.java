@@ -67,7 +67,7 @@ public class AuctionParticipantRegistry implements AuctionParticipantChecker {
         Map<Long, AuctionParticipantState> room = rooms.get(auctionId);
         return room == null ? 0 : room.size();
     }
-}
+
 
     @Override
     public boolean isParticipant(Long auctionId, Long memberId) {

@@ -86,7 +86,6 @@ public class Auction extends BaseEntity {
     @Version
     private Long version;
 
-    // 비공개 경매 전용
     private LocalDateTime commitDeadline;
     private LocalDateTime revealDeadline;
 
