@@ -107,11 +107,15 @@ public class AuctionRoomService {
                     log.warn("존재하지 않는 경매 접속: auctionId - {}", auctionId);
                     return new CustomException(ErrorCode.AUCTION_NOT_FOUND);
                 });
-        validateJoinable(auction, memberId);
+        validate(auction, auctionId, memberId);
     }
 
     public void validateJoinable(Auction auction, Long memberId) {
-        Long auctionId = auction.getId();
+        validate(auction, auction.getId(), memberId);
+    }
+
+    //구독 시점 검증은 요청으로 받은 auctionId를 그대로 써서 방(레지스트리)과 명단을 조회한다. (기존 동작과 동일)
+    private void validate(Auction auction, Long auctionId, Long memberId) {
         AuctionStatus status = auction.getStatus();
 
         if (status == AuctionStatus.CLOSED || status == AuctionStatus.FAILED) {
