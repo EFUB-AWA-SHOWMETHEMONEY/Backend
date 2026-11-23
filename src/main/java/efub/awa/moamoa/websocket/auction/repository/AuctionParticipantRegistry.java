@@ -58,6 +58,17 @@ public class AuctionParticipantRegistry implements AuctionParticipantChecker {
         return room == null ? List.of() : List.copyOf(room.values());
     }
 
+    //[변경 내용] 경매방에 현재 입장해 있는 인원 수를 돌려주는 count 메서드를 추가했다.
+    //[변경 이유] 경매 상태 전환(AuctionTransitionService)에서 정원(20명) 도달과 최소 인원(5명) 충족 여부를
+    //            판단하려면 방 인원 수가 필요한데, 기존에는 인원 수를 셀 방법이 없었다. 기존 메서드는 수정하지 않았다.
+    public int count(Long auctionId) {
+        if (auctionId == null) return 0;
+
+        Map<Long, AuctionParticipantState> room = rooms.get(auctionId);
+        return room == null ? 0 : room.size();
+    }
+
+
     @Override
     public boolean isParticipant(Long auctionId, Long memberId) {
         return (find(auctionId, memberId) != null);
