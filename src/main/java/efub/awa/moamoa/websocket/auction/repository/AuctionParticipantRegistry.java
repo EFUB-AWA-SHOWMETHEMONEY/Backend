@@ -58,6 +58,32 @@ public class AuctionParticipantRegistry implements AuctionParticipantChecker {
         return room == null ? List.of() : List.copyOf(room.values());
     }
 
+    //[변경 내용] 세션 id 없이 회원 id만으로 경매방에서 제거하는 leaveByMember 메서드를 추가했다. 제거했으면 true를 돌려준다.
+    //[변경 이유] 경매 퇴장 API(REST)에는 웹소켓 세션 id가 없어서 기존 leave(memberId, auctionId, sessionId)를 쓸 수 없다.
+    //            퇴장 후 클라이언트가 구독을 해제하면 기존 leave가 다시 호출되지만, 이미 제거된 상태라 false가 되어 user_left가 중복 발행되지 않는다.
+    //            기존 메서드는 수정하지 않았다.
+    public boolean leaveByMember(Long auctionId, Long memberId) {
+        if (auctionId == null || memberId == null) return false;
+
+        AtomicBoolean removed = new AtomicBoolean();
+        rooms.computeIfPresent(auctionId, (id, room) -> {
+            removed.set(room.remove(memberId) != null);
+            return room.isEmpty() ? null : room;
+        });
+        return removed.get();
+    }
+
+    //[변경 내용] 경매방에 현재 입장해 있는 인원 수를 돌려주는 count 메서드를 추가했다.
+    //[변경 이유] 경매 상태 전환(AuctionTransitionService)에서 정원(20명) 도달과 최소 인원(5명) 충족 여부를
+    //            판단하려면 방 인원 수가 필요한데, 기존에는 인원 수를 셀 방법이 없었다. 기존 메서드는 수정하지 않았다.
+    public int count(Long auctionId) {
+        if (auctionId == null) return 0;
+
+        Map<Long, AuctionParticipantState> room = rooms.get(auctionId);
+        return room == null ? 0 : room.size();
+    }
+
+
     @Override
     public boolean isParticipant(Long auctionId, Long memberId) {
         return (find(auctionId, memberId) != null);

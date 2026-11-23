@@ -1,5 +1,6 @@
 package efub.awa.moamoa.global.websocket.auction.listener;
 
+import efub.awa.moamoa.auction.repository.AuctionEntryListRepository;
 import efub.awa.moamoa.auction.repository.AuctionRepository;
 import efub.awa.moamoa.global.websocket.StompTestMessages;
 import efub.awa.moamoa.item.service.InventoryService;
@@ -59,7 +60,9 @@ class AuctionPresenceListenerTest {
         when(inventoryService.findEquippedItems(anyLong())).thenReturn(List.of());
 
         AuctionRoomService roomService = new AuctionRoomService(
-                registry, memberRepository, inventoryService, new ChatFilter(), mock(AuctionRepository.class));
+                registry, memberRepository, inventoryService, new ChatFilter(), mock(AuctionRepository.class),
+                //[변경 내용] AuctionRoomService에 입장 명단 저장소가 추가되어 생성자 인자를 추가했다. (경매 입장 API 개발)
+                mock(AuctionEntryListRepository.class));
         listener = new AuctionPresenceListener(registry, template, roomService);
 
         attrs = new HashMap<>();

@@ -51,7 +51,8 @@ public enum ErrorCode {
 
     //Auction - 400
     NOT_IN_AUCTION_ROOM(400, "경매에 존재하지 않는 회원입니다"),
-    NOT_AUCTION_PARTICIPANT(403, "경매에 참여한 사용자만 커밋할 수 있습니다."),
+    //커밋뿐 아니라 PUBLIC 입찰, 최고 입찰 조회에서도 함께 쓰므로 메시지를 "이용할 수 있습니다"로 바꿨다. (코드와 상태는 그대로)
+    NOT_AUCTION_PARTICIPANT(403, "경매에 참여한 사용자만 이용할 수 있습니다."),
     AUCTION_NOT_FOUND(404, "존재하지 않는 경매입니다"),
     ALREADY_STARTED(400, "이미 시작된 경매에는 새로 입장할 수 없습니다."),
     ALREADY_ENDED(400, "이미 종료된 경매입니다."),
@@ -62,6 +63,19 @@ public enum ErrorCode {
     ALREADY_REVEALED(409, "이미 공개한 입찰입니다."),
     COMMIT_HASH_MISMATCH(400, "제출한 금액이 커밋 해시와 일치하지 않습니다."),
 
+    INVALID_READY_START_TIME(400, "경매 입장 시작 시각은 현재 시각 이후여야 합니다."),
+    ITEM_EQUIPPED(400, "장착 중인 아이템은 경매에 올릴 수 없습니다."),
+    INSUFFICIENT_ITEM_QUANTITY(400, "경매에 올릴 수 있는 수량이 없습니다."),
+    AUCTION_CONDITION_NOT_MET(409, "아직 전환 조건을 만족하지 않았습니다."),
+    ENTRY_NOT_STARTED(400, "아직 입장 시간이 아닙니다."),
+    SELLER_CANNOT_JOIN(400, "본인이 등록한 경매에는 입장할 수 없습니다."),
+    ROOM_FULL(409, "정원이 가득 찼습니다."),
+    REENTRY_NOT_ALLOWED(409, "PUBLIC 경매는 시작 후 퇴장하면 다시 입장할 수 없습니다."),
+    ALREADY_LEFT(409, "이미 경매에서 퇴장하셨습니다."),
+    NOT_PUBLIC_AUCTION(400, "PUBLIC 경매가 아닙니다."),
+    AUCTION_NOT_BIDDABLE(400, "입찰이 불가능한 경매 상태입니다."),
+    BID_TOO_LOW(400, "입찰가가 너무 낮습니다."),
+    ALREADY_HIGHEST_BIDDER(409, "이미 최고가 입찰자입니다."),
 
     //Item
     ITEM_NOT_FOUND(404, "존재하지 않는 아이템입니다."),

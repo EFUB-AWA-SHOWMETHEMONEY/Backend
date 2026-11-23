@@ -3,6 +3,7 @@ package efub.awa.moamoa.global.websocket.auction.service;
 import efub.awa.moamoa.auction.entity.Auction;
 import efub.awa.moamoa.auction.enums.AuctionStatus;
 import efub.awa.moamoa.auction.enums.AuctionType;
+import efub.awa.moamoa.auction.repository.AuctionEntryListRepository;
 import efub.awa.moamoa.auction.repository.AuctionRepository;
 import efub.awa.moamoa.global.exception.CustomException;
 import efub.awa.moamoa.global.exception.ErrorCode;
@@ -48,8 +49,10 @@ class AuctionRoomServiceTest {
         memberRepository = mock(MemberRepository.class);
         inventoryService = mock(InventoryService.class);
         auctionRepository = mock(AuctionRepository.class);
+        //[변경 내용] AuctionRoomService에 입장 명단 저장소(AuctionEntryListRepository)가 추가되어 생성자 인자를 추가했다.
+        //[변경 이유] 경매 입장 API 개발로 validateJoinable이 OPEN 이후 참가자/퇴장 명단을 확인하게 되었다. (mock은 명단에 없음으로 응답)
         service = new AuctionRoomService(registry, memberRepository, inventoryService,
-                new ChatFilter(), auctionRepository);
+                new ChatFilter(), auctionRepository, mock(AuctionEntryListRepository.class));
 
         Member member = mock(Member.class);
         when(member.getNickname()).thenReturn("테스터");
@@ -62,6 +65,9 @@ class AuctionRoomServiceTest {
                 .type(AuctionType.PUBLIC)
                 .startPrice(1000L)
                 .readyStartTime(LocalDateTime.now())
+                //[변경 내용] 정원(maxParticipants)을 추가했다.
+                //[변경 이유] validateJoinable이 READY에서 정원 초과를 검사하게 되어 정원 값이 필요하다. 기존 테스트의 기대 결과는 그대로다.
+                .maxParticipants(20)
                 .build();
         ReflectionTestUtils.setField(auction, "status", status);   // 생성 시 READY 고정이라 리플렉션으로 변경
         when(auctionRepository.findById(AUCTION)).thenReturn(Optional.of(auction));
