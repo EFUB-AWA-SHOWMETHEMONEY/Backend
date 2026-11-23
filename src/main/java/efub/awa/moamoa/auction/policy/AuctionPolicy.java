@@ -22,4 +22,13 @@ public final class AuctionPolicy {
 
     //PUBLIC 경매는 마지막 입찰 후 이 시간(초) 동안 새 입찰이 없으면 종료
     public static final long PUBLIC_IDLE_CLOSE_SECONDS = 30;
+
+    //PUBLIC 소프트클로즈: 마감까지 이 시간(초) 이하로 남았을 때 입찰이 들어오면
+    public static final long SOFT_CLOSE_THRESHOLD_SECONDS = 10;
+
+    //마감 시각을 이 시간(초)만큼 늘린다
+    public static final long SOFT_CLOSE_EXTENSION_SECONDS = 10;
+
+    //단, 마감 시각은 openStartTime + 이 시간(분)을 넘지 않는다
+    public static final long PUBLIC_MAX_OPEN_MINUTES = 13;
 }

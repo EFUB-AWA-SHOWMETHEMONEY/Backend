@@ -129,7 +129,8 @@ public class AuctionService {
     }
 
     //참가 중: 지금 방에 있거나, OPEN 이후 참가자 명단에 있고 퇴장 명단에는 없는 경우 (연결이 끊긴 참가자 포함)
-    private boolean isAttending(Auction auction, Long memberId) {
+    //퇴장과 PUBLIC 입찰이 같은 기준을 쓴다.
+    public boolean isAttending(Auction auction, Long memberId) {
         Long auctionId = auction.getId();
         if (participantRegistry.find(auctionId, memberId) != null) return true;
         if (auction.getStatus() != AuctionStatus.OPEN) return false;

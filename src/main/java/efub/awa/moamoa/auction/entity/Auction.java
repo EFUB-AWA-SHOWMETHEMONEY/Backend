@@ -119,6 +119,13 @@ public class Auction extends BaseEntity {
         }
     }
 
+    //PUBLIC 입찰 반영: 현재가, 최고 입찰자, 마감 시각(소프트클로즈 반영)을 한 번에 갱신한다.
+    public void placeBid(Member bidder, Long amount, LocalDateTime commitDeadline) {
+        this.currentBidder = bidder;
+        this.currentPrice = amount;
+        this.commitDeadline = commitDeadline;
+    }
+
     //READY/OPEN -> FAILED: 인원 미달 또는 유효 낙찰자 없음
     public void fail() {
         this.status = AuctionStatus.FAILED;
