@@ -1,6 +1,7 @@
 package efub.awa.moamoa.auction.service;
 
 import efub.awa.moamoa.auction.dto.request.PublicBidRequest;
+import efub.awa.moamoa.auction.dto.response.HighestBidResponse;
 import efub.awa.moamoa.auction.dto.response.PublicBidResponse;
 import efub.awa.moamoa.auction.entity.Auction;
 import efub.awa.moamoa.auction.entity.PublicBid;
@@ -106,6 +107,7 @@ class PublicBidServiceTest {
         ReflectionTestUtils.setField(auction, "id", AUCTION);
         auction.open(LocalDateTime.now().minusMinutes(openedMinutesAgo));
         when(auctionRepository.findByIdForUpdate(AUCTION)).thenReturn(Optional.of(auction));
+        when(auctionRepository.findById(AUCTION)).thenReturn(Optional.of(auction));   // 최고 입찰 조회는 락 없이 조회
         return auction;
     }
 
@@ -381,5 +383,106 @@ class PublicBidServiceTest {
         PublicBidResponse response = service.placeBid(BIDDER, AUCTION, bid(START_PRICE));
 
         assertThat(response.commitDeadline()).isEqualTo(limit);
+    }
+
+    // ---------- 최고 입찰 조회 ----------
+
+    @Test
+    @DisplayName("최고 입찰 조회: 존재하지 않는 경매는 AUCTION_NOT_FOUND")
+    void highestNotFound() {
+        when(auctionRepository.findById(AUCTION)).thenReturn(Optional.empty());
+
+        assertErrorCode(() -> service.getHighestBid(BIDDER, AUCTION), ErrorCode.AUCTION_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("최고 입찰 조회: PRIVATE은 NOT_PUBLIC_AUCTION (참가 여부보다 먼저)")
+    void highestPrivate() {
+        openAuction(AuctionType.PRIVATE, 1);
+        when(auctionService.isAttending(any(Auction.class), eq(BIDDER))).thenReturn(false);
+
+        assertErrorCode(() -> service.getHighestBid(BIDDER, AUCTION), ErrorCode.NOT_PUBLIC_AUCTION);
+    }
+
+    @Test
+    @DisplayName("최고 입찰 조회: CLOSED/FAILED는 ALREADY_ENDED")
+    void highestEnded() {
+        Auction auction = openPublic();
+        ReflectionTestUtils.setField(auction, "status", AuctionStatus.CLOSED);
+        assertErrorCode(() -> service.getHighestBid(BIDDER, AUCTION), ErrorCode.ALREADY_ENDED);
+
+        ReflectionTestUtils.setField(auction, "status", AuctionStatus.FAILED);
+        assertErrorCode(() -> service.getHighestBid(BIDDER, AUCTION), ErrorCode.ALREADY_ENDED);
+    }
+
+    @Test
+    @DisplayName("최고 입찰 조회: 참가 중이 아니면 NOT_AUCTION_PARTICIPANT")
+    void highestNotAttending() {
+        openPublic();
+        when(auctionService.isAttending(any(Auction.class), eq(BIDDER))).thenReturn(false);
+
+        assertErrorCode(() -> service.getHighestBid(BIDDER, AUCTION), ErrorCode.NOT_AUCTION_PARTICIPANT);
+    }
+
+    @Test
+    @DisplayName("최고 입찰 조회: 입찰이 있으면 최고 입찰자, 입찰 횟수, 마지막 입찰 시각, 마감 시각을 내려준다 (락 없이 조회)")
+    void highestWithBids() {
+        Auction auction = openPublic();
+        withPreviousBid(auction, previous, 2000L, 5);
+        when(publicBidRepository.countByAuctionId(AUCTION)).thenReturn(7L);
+        LocalDateTime lastBidAt = publicBidRepository.findLastBidTime(AUCTION).orElseThrow();
+
+        HighestBidResponse response = service.getHighestBid(BIDDER, AUCTION);
+
+        assertThat(response.auctionId()).isEqualTo(AUCTION);
+        assertThat(response.currentPrice()).isEqualTo(2000L);
+        assertThat(response.highestBidderId()).isEqualTo(PREVIOUS);
+        assertThat(response.highestBidderNickname()).isEqualTo("이전입찰자");
+        assertThat(response.bidCount()).isEqualTo(7);
+        assertThat(response.lastBidAt()).isEqualTo(lastBidAt);
+        assertThat(response.commitDeadline()).isEqualTo(auction.getCommitDeadline());
+        verify(auctionRepository, never()).findByIdForUpdate(anyLong());
+    }
+
+    @Test
+    @DisplayName("최고 입찰 조회: 입찰이 없으면 현재가는 시작가, 입찰자·마지막 입찰 시각은 null")
+    void highestNoBids() {
+        openPublic();
+        when(publicBidRepository.countByAuctionId(AUCTION)).thenReturn(0L);
+
+        HighestBidResponse response = service.getHighestBid(BIDDER, AUCTION);
+
+        assertThat(response.currentPrice()).isEqualTo(START_PRICE);
+        assertThat(response.highestBidderId()).isNull();
+        assertThat(response.highestBidderNickname()).isNull();
+        assertThat(response.bidCount()).isZero();
+        assertThat(response.lastBidAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("최고 입찰 조회: 최고 입찰자가 탈퇴했으면 id는 null, 닉네임은 '탈퇴한 사용자'")
+    void highestBidderWithdrawn() {
+        Auction auction = openPublic();
+        withPreviousBid(auction, null, 2000L, 5);
+        when(publicBidRepository.countByAuctionId(AUCTION)).thenReturn(3L);
+
+        HighestBidResponse response = service.getHighestBid(BIDDER, AUCTION);
+
+        assertThat(response.highestBidderId()).isNull();
+        assertThat(response.highestBidderNickname()).isEqualTo("탈퇴한 사용자");
+        assertThat(response.bidCount()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("최고 입찰 조회: READY는 조회할 수 있고 마감 시각은 null")
+    void highestReady() {
+        Auction auction = openPublic();
+        ReflectionTestUtils.setField(auction, "status", AuctionStatus.READY);
+        when(publicBidRepository.countByAuctionId(AUCTION)).thenReturn(0L);
+
+        HighestBidResponse response = service.getHighestBid(BIDDER, AUCTION);
+
+        assertThat(response.commitDeadline()).isNull();
+        assertThat(response.currentPrice()).isEqualTo(START_PRICE);
     }
 }

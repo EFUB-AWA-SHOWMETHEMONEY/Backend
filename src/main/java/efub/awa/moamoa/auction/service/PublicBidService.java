@@ -1,6 +1,7 @@
 package efub.awa.moamoa.auction.service;
 
 import efub.awa.moamoa.auction.dto.request.PublicBidRequest;
+import efub.awa.moamoa.auction.dto.response.HighestBidResponse;
 import efub.awa.moamoa.auction.dto.response.PublicBidResponse;
 import efub.awa.moamoa.auction.entity.Auction;
 import efub.awa.moamoa.auction.entity.PublicBid;
@@ -93,6 +94,35 @@ public class PublicBidService {
         log.info("PUBLIC 입찰 성공 - auctionId: {}, bidderId: {}, amount: {}, commitDeadline: {}",
                 auctionId, bidderId, amount, deadline);
         return PublicBidResponse.of(bid, auction);
+    }
+
+    //경매방 초기 화면용 최고 입찰 스냅샷. 락 없이 읽기 전용으로 조회한다.
+    @Transactional(readOnly = true)
+    public HighestBidResponse getHighestBid(Long memberId, Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> {
+                    log.warn("존재하지 않는 경매 최고 입찰 조회 - auctionId: {}, memberId: {}", auctionId, memberId);
+                    return new CustomException(ErrorCode.AUCTION_NOT_FOUND);
+                });
+
+        //PRIVATE은 마감 전까지 입찰 금액을 공개하지 않는다.
+        if (auction.getType() != AuctionType.PUBLIC) {
+            throw new CustomException(ErrorCode.NOT_PUBLIC_AUCTION);
+        }
+        AuctionStatus status = auction.getStatus();
+        if (status == AuctionStatus.CLOSED || status == AuctionStatus.FAILED) {
+            throw new CustomException(ErrorCode.ALREADY_ENDED);
+        }
+        if (!auctionService.isAttending(auction, memberId)) {
+            log.warn("참가 중이 아닌 회원의 최고 입찰 조회 - auctionId: {}, memberId: {}", auctionId, memberId);
+            throw new CustomException(ErrorCode.NOT_AUCTION_PARTICIPANT);
+        }
+
+        long bidCount = publicBidRepository.countByAuctionId(auctionId);
+        LocalDateTime lastBidAt = publicBidRepository.findLastBidTime(auctionId).orElse(null);
+
+        log.info("최고 입찰 조회 성공 - auctionId: {}, memberId: {}, bidCount: {}", auctionId, memberId, bidCount);
+        return HighestBidResponse.of(auction, bidCount, lastBidAt);
     }
 
     //입찰 가능한 경매: PUBLIC + OPEN + 종료 조건 미충족

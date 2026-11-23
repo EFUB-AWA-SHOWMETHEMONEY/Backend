@@ -15,4 +15,7 @@ public interface PublicBidRepository extends JpaRepository<PublicBid, Long> {
     //경매의 마지막 입찰 시각 (입찰이 없으면 빈 값)
     @Query("select max(b.createdAt) from PublicBid b where b.auction.id = :auctionId")
     Optional<LocalDateTime> findLastBidTime(@Param("auctionId") Long auctionId);
+
+    //경매의 입찰 횟수 (최고 입찰 조회)
+    long countByAuctionId(Long auctionId);
 }
