@@ -43,7 +43,7 @@ public enum ErrorCode {
     //Attendance
     ALREADY_RECEIVED_REWARD(409, "이미 오늘의 보상을 받았습니다."),
 
-    //Websocet
+    //Websocket
     INVALID_STOMP_DESTINATION(400, "잘못된 STOMP 도착지입니다"),
 
     //Plaza - 400
@@ -51,9 +51,17 @@ public enum ErrorCode {
 
     //Auction - 400
     NOT_IN_AUCTION_ROOM(400, "경매에 존재하지 않는 회원입니다"),
+    NOT_AUCTION_PARTICIPANT(403, "경매에 참여한 사용자만 커밋할 수 있습니다."),
     AUCTION_NOT_FOUND(404, "존재하지 않는 경매입니다"),
     ALREADY_STARTED(400, "이미 시작된 경매에는 새로 입장할 수 없습니다."),
     ALREADY_ENDED(400, "이미 종료된 경매입니다."),
+    NOT_PRIVATE_AUCTION(400, "PRIVATE 경매가 아닙니다."),
+    INVALID_AUCTION_STATE(400, "커밋 제출이 불가능한 경매 상태입니다."),
+    INVALID_REVEAL_STATE (400, "지금은 공개 가능한 시간이 아닙니다."),
+    NO_ACTIVE_COMMIT(400, "제출한 입찰 커밋이 없습니다."),
+    ALREADY_REVEALED(409, "이미 공개한 입찰입니다."),
+    COMMIT_HASH_MISMATCH(400, "제출한 금액이 커밋 해시와 일치하지 않습니다."),
+
     INVALID_READY_START_TIME(400, "경매 입장 시작 시각은 현재 시각 이후여야 합니다."),
     ITEM_EQUIPPED(400, "장착 중인 아이템은 경매에 올릴 수 없습니다."),
     INSUFFICIENT_ITEM_QUANTITY(400, "경매에 올릴 수 있는 수량이 없습니다."),
